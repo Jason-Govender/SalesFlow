@@ -1,21 +1,15 @@
 import type { Metadata } from "next";
+import { AppConfigProvider } from "@/providers/config-provider";
 
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "SalesFlow",
-  description: "A Sales Pipeline Management Tool",
-};
+import "antd/dist/reset.css";
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        {children}
+        <AppConfigProvider>{children}</AppConfigProvider>
       </body>
     </html>
   );
