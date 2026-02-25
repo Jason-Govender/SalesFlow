@@ -1,4 +1,4 @@
-// src/utils/authService.ts
+
 import { axiosInstance } from "./axios-instance";
 import type { IAuthSession } from "../providers/auth-provider/context";
 

@@ -1,4 +1,3 @@
-// src/utils/axiosInstance.ts
 import axios from "axios";
 import { getAccessToken } from "./auth-session-storage";
 import { authEvents } from "./auth-events";
