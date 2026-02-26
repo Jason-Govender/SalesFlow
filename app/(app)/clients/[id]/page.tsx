@@ -10,6 +10,7 @@ import { useClientsState, useClientsActions } from "@/providers/clients-provider
 import { CLIENT_TYPE_LABELS, ClientType } from "@/utils/clients-service";
 import type { IUpdateClientRequest } from "@/utils/clients-service";
 import { ContactList } from "@/components/contacts/ContactList";
+import { ContractList } from "@/components/contracts/ContractList";
 import { OpportunityList } from "@/components/opportunities/OpportunityList";
 import { useAppPageStyles } from "../../pageStyles";
 
@@ -265,7 +266,7 @@ export default function ClientDetailPage() {
             items={[
               { key: "contacts", label: "Contacts", children: id ? <ContactList clientId={id} /> : null },
               { key: "opportunities", label: "Opportunities", children: id ? <OpportunityList clientId={id} /> : null },
-              { key: "contracts", label: "Contracts", children: <Text type="secondary">Coming soon</Text> },
+              { key: "contracts", label: "Contracts", children: id ? <ContractList clientId={id} /> : null },
               { key: "documents", label: "Documents", children: <Text type="secondary">Coming soon</Text> },
               { key: "notes", label: "Notes", children: <Text type="secondary">Coming soon</Text> },
             ]}
