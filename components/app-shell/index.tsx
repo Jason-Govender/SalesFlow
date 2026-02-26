@@ -9,7 +9,6 @@ import {
   FolderOutlined,
   TeamOutlined,
   CalendarOutlined,
-  FileTextOutlined,
   DownOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
@@ -51,14 +50,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       icon: <CalendarOutlined />,
       label: <Link href="/activities">Activities</Link>,
     },
-    {
-      key: "/contracts",
-      icon: <FileTextOutlined />,
-      label: <Link href="/contracts">Contracts</Link>,
-    },
   ];
 
-  const pathKeys = ["/", "/proposals", "/clients", "/activities", "/contracts"];
+  const pathKeys = ["/", "/proposals", "/clients", "/activities"];
   const selectedKey =
     pathname === "/"
       ? "/"
