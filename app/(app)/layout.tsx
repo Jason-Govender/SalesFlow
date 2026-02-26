@@ -6,6 +6,7 @@ import { ConfigProvider, Spin } from "antd";
 import { useAuthState } from "@/providers/auth-provider";
 import { DashboardProvider } from "@/providers/dashboard-provider";
 import { ClientsProvider } from "@/providers/clients-provider";
+import { ContactsProvider } from "@/providers/contacts-provider";
 import { ProposalsProvider } from "@/providers/proposals-provider";
 import { AppShell } from "@/components/app-shell";
 import { hasAccess } from "@/utils/route-roles";
@@ -71,9 +72,11 @@ export default function AppLayout({
     >
       <DashboardProvider>
         <ClientsProvider>
-          <ProposalsProvider>
-            <AppShell>{children}</AppShell>
-          </ProposalsProvider>
+          <ContactsProvider>
+            <ProposalsProvider>
+              <AppShell>{children}</AppShell>
+            </ProposalsProvider>
+          </ContactsProvider>
         </ClientsProvider>
       </DashboardProvider>
     </ConfigProvider>
