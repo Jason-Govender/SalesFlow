@@ -10,11 +10,12 @@ export enum DashboardActionEnums {
 
 export const loadDashboardPending = createAction<IDashboardStateContext>(
   DashboardActionEnums.loadDashboardPending,
-  () => ({
-    isPending: true,
-    isError: false,
-    error: undefined,
-  })
+  () =>
+    ({
+      isPending: true,
+      isError: false,
+      error: undefined,
+    }) as IDashboardStateContext
 );
 
 export const loadDashboardSuccess = createAction<

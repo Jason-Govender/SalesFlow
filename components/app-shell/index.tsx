@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     {
       key: "/proposals",
       icon: <FolderOutlined />,
-      label: <Link href="/proposals">Proposals & Pricing</Link>,
+      label: <Link href="/proposals">Proposals</Link>,
     },
     {
       key: "/activities",
