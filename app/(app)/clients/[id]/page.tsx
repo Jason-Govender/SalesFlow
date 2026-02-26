@@ -9,6 +9,7 @@ import { useAuthState } from "@/providers/auth-provider";
 import { useClientsState, useClientsActions } from "@/providers/clients-provider";
 import { CLIENT_TYPE_LABELS, ClientType } from "@/utils/clients-service";
 import type { IUpdateClientRequest } from "@/utils/clients-service";
+import { ContactList } from "@/components/contacts/ContactList";
 import { useAppPageStyles } from "../../pageStyles";
 
 const { Title, Text } = Typography;
@@ -261,7 +262,7 @@ export default function ClientDetailPage() {
           <Tabs
             defaultActiveKey="contacts"
             items={[
-              { key: "contacts", label: "Contacts", children: <Text type="secondary">Coming soon</Text> },
+              { key: "contacts", label: "Contacts", children: id ? <ContactList clientId={id} /> : null },
               { key: "opportunities", label: "Opportunities", children: <Text type="secondary">Coming soon</Text> },
               { key: "contracts", label: "Contracts", children: <Text type="secondary">Coming soon</Text> },
               { key: "documents", label: "Documents", children: <Text type="secondary">Coming soon</Text> },
