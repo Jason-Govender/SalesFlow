@@ -5,6 +5,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { ConfigProvider, Spin } from "antd";
 import { useAuthState } from "@/providers/auth-provider";
 import { DashboardProvider } from "@/providers/dashboard-provider";
+import { ClientsProvider } from "@/providers/clients-provider";
+import { ProposalsProvider } from "@/providers/proposals-provider";
 import { AppShell } from "@/components/app-shell";
 import { hasAccess } from "@/utils/route-roles";
 import { useAppLayoutStyles } from "./layoutStyles";
@@ -68,7 +70,11 @@ export default function AppLayout({
       }}
     >
       <DashboardProvider>
-        <AppShell>{children}</AppShell>
+        <ClientsProvider>
+          <ProposalsProvider>
+            <AppShell>{children}</AppShell>
+          </ProposalsProvider>
+        </ClientsProvider>
       </DashboardProvider>
     </ConfigProvider>
   );

@@ -7,6 +7,7 @@ import { Layout, Menu, Dropdown } from "antd";
 import {
   HomeOutlined,
   FolderOutlined,
+  TeamOutlined,
   CalendarOutlined,
   FileTextOutlined,
   DownOutlined,
@@ -41,6 +42,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       label: <Link href="/proposals">Proposals</Link>,
     },
     {
+      key: "/clients",
+      icon: <TeamOutlined />,
+      label: <Link href="/clients">Clients</Link>,
+    },
+    {
       key: "/activities",
       icon: <CalendarOutlined />,
       label: <Link href="/activities">Activities</Link>,
@@ -52,7 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     },
   ];
 
-  const pathKeys = ["/", "/proposals", "/activities", "/contracts"];
+  const pathKeys = ["/", "/proposals", "/clients", "/activities", "/contracts"];
   const selectedKey =
     pathname === "/"
       ? "/"
