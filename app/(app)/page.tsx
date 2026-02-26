@@ -1,5 +1,6 @@
 "use client";
 
+
 import { Card, Row, Col, Statistic, Spin, Alert, Table } from "antd";
 import { useDashboardState, useDashboardActions } from "@/providers/dashboard-provider";
 import { useDashboardPageStyles } from "./pageStyles";
@@ -181,3 +182,4 @@ export default function Home() {
     </div>
   );
 }
+
