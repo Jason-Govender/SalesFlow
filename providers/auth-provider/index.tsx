@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     router.replace("/login");
   }, [router]);
 
-  const initAuth = useCallback(async () => {
+  const initAuth = useCallback(async (): Promise<void> => {
     dispatch(initAuthPending());
 
     const storedSession = authSessionStorage.get();
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [logout]);
 
   const login = useCallback(
-    async (credentials: { email: string; password: string }) => {
+    async (credentials: { email: string; password: string }): Promise<void> => {
       dispatch(loginPending());
 
       try {
@@ -84,7 +84,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     []
   );
 
-  const register = useCallback(async (payload: RegisterPayload) => {
+  const register = useCallback(
+    async (payload: RegisterPayload): Promise<void> => {
     dispatch(registerPending());
 
     try {

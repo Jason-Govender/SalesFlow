@@ -1,15 +1,13 @@
 "use client";
+
 import { createStyles } from "antd-style";
 
-export const useLoginStyles = createStyles(({ token }) => ({
+export const useRegisterStyles = createStyles(({ token }) => ({
   card: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: 520,
     borderRadius: token.borderRadiusLG,
     boxShadow: token.boxShadowSecondary,
-  },
-  alert: {
-    marginBottom: token.marginMD,
   },
   header: {
     textAlign: "center",
@@ -19,16 +17,16 @@ export const useLoginStyles = createStyles(({ token }) => ({
     alignItems: "center",
     gap: token.marginSM,
   },
-
   subtitle: {
-    fontWeight: 600,  
+    fontWeight: 600,
     fontSize: token.fontSizeLG,
   },
-  title: {
-    marginBottom: 4,
+  alert: {
+    marginBottom: token.marginMD,
   },
   footer: {
     textAlign: "center",
     marginTop: token.marginSM,
   },
 }));
+
