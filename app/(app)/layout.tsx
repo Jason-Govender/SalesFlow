@@ -10,6 +10,7 @@ import { ContactsProvider } from "@/providers/contacts-provider";
 import { ContractsProvider } from "@/providers/contracts-provider";
 import { OpportunitiesProvider } from "@/providers/opportunities-provider";
 import { ProposalsProvider } from "@/providers/proposals-provider";
+import { ActivitiesProvider } from "@/providers/activities-provider";
 import { AppShell } from "@/components/app-shell";
 import { hasAccess } from "@/utils/route-roles";
 import { useAppLayoutStyles } from "./layoutStyles";
@@ -78,7 +79,9 @@ export default function AppLayout({
             <ContractsProvider>
               <OpportunitiesProvider>
                 <ProposalsProvider>
-                <AppShell>{children}</AppShell>
+                  <ActivitiesProvider>
+                    <AppShell>{children}</AppShell>
+                  </ActivitiesProvider>
                 </ProposalsProvider>
               </OpportunitiesProvider>
             </ContractsProvider>

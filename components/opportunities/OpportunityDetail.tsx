@@ -38,6 +38,8 @@ import type { OpportunityFormValues } from "./OpportunityFormModal";
 import { OpportunityFormModal } from "./OpportunityFormModal";
 import { StageChangeModal } from "./StageChangeModal";
 import { AssignOpportunityModal } from "./AssignOpportunityModal";
+import { ActivityList } from "@/components/activities/ActivityList";
+import { RelatedToType } from "@/utils/activities-service";
 
 const ROLES_CAN_ASSIGN_OR_DELETE_OPPORTUNITY: string[] = ["Admin", "SalesManager"];
 
@@ -374,6 +376,14 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
           />
         </Card>
       )}
+
+      <Card title="Activities">
+        <ActivityList
+          relatedToType={RelatedToType.Opportunity}
+          relatedToId={opp.id}
+          compact
+        />
+      </Card>
 
       <OpportunityFormModal
         onSubmit={async () => {}}
