@@ -2,15 +2,21 @@
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Spin } from "antd";
+import { ConfigProvider, Spin } from "antd";
 import { useAuthState } from "@/providers/auth-provider";
+import { DashboardProvider } from "@/providers/dashboard-provider";
+import { AppShell } from "@/components/app-shell";
 import { hasAccess } from "@/utils/route-roles";
+import { useAppLayoutStyles } from "./layoutStyles";
+
+const ORANGE_PRIMARY = "#e85d04";
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { styles } = useAppLayoutStyles();
   const router = useRouter();
   const pathname = usePathname();
   const { session, isAuthReady } = useAuthState();
@@ -31,14 +37,7 @@ export default function AppLayout({
 
   if (!isAuthReady) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-        }}
-      >
+      <div className={styles.spinWrapper}>
         <Spin size="large" />
       </div>
     );
@@ -46,14 +45,7 @@ export default function AppLayout({
 
   if (!session) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-        }}
-      >
+      <div className={styles.spinWrapper}>
         <Spin size="large" />
       </div>
     );
@@ -61,18 +53,23 @@ export default function AppLayout({
 
   if (!hasAccess(session.user.roles, pathname ?? "/")) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-        }}
-      >
+      <div className={styles.spinWrapper}>
         <Spin size="large" />
       </div>
     );
   }
 
-  return <>{children}</>;
+  return (
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: ORANGE_PRIMARY,
+        },
+      }}
+    >
+      <DashboardProvider>
+        <AppShell>{children}</AppShell>
+      </DashboardProvider>
+    </ConfigProvider>
+  );
 }
