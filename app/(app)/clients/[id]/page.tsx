@@ -12,6 +12,7 @@ import type { IUpdateClientRequest } from "@/utils/clients-service";
 import { ContactList } from "@/components/contacts/ContactList";
 import { ContractList } from "@/components/contracts/ContractList";
 import { OpportunityList } from "@/components/opportunities/OpportunityList";
+import { ProposalList } from "@/components/proposals";
 import { ActivityList } from "@/components/activities/ActivityList";
 import { RelatedToType } from "@/utils/activities-service";
 import { useAppPageStyles } from "../../pageStyles";
@@ -268,6 +269,7 @@ export default function ClientDetailPage() {
             items={[
               { key: "contacts", label: "Contacts", children: id ? <ContactList clientId={id} /> : null },
               { key: "opportunities", label: "Opportunities", children: id ? <OpportunityList clientId={id} /> : null },
+              { key: "proposals", label: "Proposals", children: id ? <ProposalList clientId={id} showCreateButton createHref={`/proposals/new?clientId=${id}`} /> : null },
               { key: "contracts", label: "Contracts", children: id ? <ContractList clientId={id} /> : null },
               { key: "activities", label: "Activities", children: id ? <ActivityList relatedToType={RelatedToType.Client} relatedToId={id} /> : null },
               { key: "documents", label: "Documents", children: <Text type="secondary">Coming soon</Text> },

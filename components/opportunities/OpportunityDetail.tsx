@@ -27,7 +27,6 @@ import {
 import { useAuthState } from "@/providers/auth-provider";
 import { useOpportunitiesState, useOpportunitiesActions } from "@/providers/opportunities-provider";
 import { useContactsState, useContactsActions } from "@/providers/contacts-provider";
-import type { IOpportunity } from "@/utils/opportunities-service";
 import {
   OPPORTUNITY_STAGE_LABELS,
   OPPORTUNITY_SOURCE_LABELS,
@@ -39,6 +38,7 @@ import { OpportunityFormModal } from "./OpportunityFormModal";
 import { StageChangeModal } from "./StageChangeModal";
 import { AssignOpportunityModal } from "./AssignOpportunityModal";
 import { ActivityList } from "@/components/activities/ActivityList";
+import { ProposalList } from "@/components/proposals";
 import { RelatedToType } from "@/utils/activities-service";
 
 const ROLES_CAN_ASSIGN_OR_DELETE_OPPORTUNITY: string[] = ["Admin", "SalesManager"];
@@ -73,28 +73,6 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
     actionPending,
   } = useOpportunitiesState();
 
-  // #region agent log
-  fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "8dbc10" },
-    body: JSON.stringify({
-      sessionId: "8dbc10",
-      location: "OpportunityDetail.tsx:render",
-      message: "OpportunityDetail render",
-      data: {
-        clientId,
-        clientName,
-        selectedOpportunityId: selectedOpportunity?.id ?? null,
-        isPending,
-        isError,
-        errorSnippet: error?.slice(0, 80) ?? null,
-        stageHistoryLength: stageHistory?.length ?? 0,
-      },
-      timestamp: Date.now(),
-      hypothesisId: "H1_H5",
-    }),
-  }).catch(() => {});
-  // #endregion
   const {
     updateOpportunity,
     setStage,
@@ -112,20 +90,6 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
   const [assignModalOpen, setAssignModalOpen] = useState(false);
 
   const handleEditSuccess = () => {
-    // #region agent log
-    fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "8dbc10" },
-      body: JSON.stringify({
-        sessionId: "8dbc10",
-        location: "OpportunityDetail.tsx:handleEditSuccess",
-        message: "Edit success handler",
-        data: { selectedOpportunityId: selectedOpportunity?.id ?? null },
-        timestamp: Date.now(),
-        hypothesisId: "H4",
-      }),
-    }).catch(() => {});
-    // #endregion
     setEditModalOpen(false);
     if (selectedOpportunity) {
       loadOpportunity(selectedOpportunity.id);
@@ -156,20 +120,6 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
   };
 
   const handleAssignSuccess = () => {
-    // #region agent log
-    fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "8dbc10" },
-      body: JSON.stringify({
-        sessionId: "8dbc10",
-        location: "OpportunityDetail.tsx:handleAssignSuccess",
-        message: "Assign success handler",
-        data: { selectedOpportunityId: selectedOpportunity?.id ?? null },
-        timestamp: Date.now(),
-        hypothesisId: "H4",
-      }),
-    }).catch(() => {});
-    // #endregion
     setAssignModalOpen(false);
     if (selectedOpportunity) {
       loadOpportunity(selectedOpportunity.id);
@@ -192,20 +142,6 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
   };
 
   if (isPending && !selectedOpportunity) {
-    // #region agent log
-    fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "8dbc10" },
-      body: JSON.stringify({
-        sessionId: "8dbc10",
-        location: "OpportunityDetail.tsx:loading-branch",
-        message: "Rendering loading spinner",
-        data: { isPending, hasSelected: !!selectedOpportunity },
-        timestamp: Date.now(),
-        hypothesisId: "H1",
-      }),
-    }).catch(() => {});
-    // #endregion
     return (
       <div
         style={{
@@ -234,20 +170,6 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
   }
 
   if (!selectedOpportunity) {
-    // #region agent log
-    fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "8dbc10" },
-      body: JSON.stringify({
-        sessionId: "8dbc10",
-        location: "OpportunityDetail.tsx:not-found-branch",
-        message: "Rendering opportunity not found",
-        data: { isPending, isError, clientId },
-        timestamp: Date.now(),
-        hypothesisId: "H1_H3",
-      }),
-    }).catch(() => {});
-    // #endregion
     return (
       <Space direction="vertical">
         <Link href={`/clients/${clientId}`}>
@@ -376,6 +298,15 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
           />
         </Card>
       )}
+
+      <Card title="Proposals">
+        <ProposalList
+          clientId={clientId}
+          opportunityId={opp.id}
+          showCreateButton
+          createHref={`/proposals/new?clientId=${clientId}&opportunityId=${opp.id}`}
+        />
+      </Card>
 
       <Card title="Activities">
         <ActivityList
