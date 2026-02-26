@@ -7,6 +7,7 @@ import { useAuthState } from "@/providers/auth-provider";
 import { DashboardProvider } from "@/providers/dashboard-provider";
 import { ClientsProvider } from "@/providers/clients-provider";
 import { ContactsProvider } from "@/providers/contacts-provider";
+import { OpportunitiesProvider } from "@/providers/opportunities-provider";
 import { ProposalsProvider } from "@/providers/proposals-provider";
 import { AppShell } from "@/components/app-shell";
 import { hasAccess } from "@/utils/route-roles";
@@ -73,9 +74,11 @@ export default function AppLayout({
       <DashboardProvider>
         <ClientsProvider>
           <ContactsProvider>
-            <ProposalsProvider>
+            <OpportunitiesProvider>
+              <ProposalsProvider>
               <AppShell>{children}</AppShell>
-            </ProposalsProvider>
+              </ProposalsProvider>
+            </OpportunitiesProvider>
           </ContactsProvider>
         </ClientsProvider>
       </DashboardProvider>
