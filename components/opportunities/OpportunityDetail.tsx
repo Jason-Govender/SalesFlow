@@ -21,6 +21,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   SwapOutlined,
+  UserAddOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
 import { useAuthState } from "@/providers/auth-provider";
@@ -36,6 +37,7 @@ import {
 import type { OpportunityFormValues } from "./OpportunityFormModal";
 import { OpportunityFormModal } from "./OpportunityFormModal";
 import { StageChangeModal } from "./StageChangeModal";
+import { AssignOpportunityModal } from "./AssignOpportunityModal";
 
 const ROLES_CAN_ASSIGN_OR_DELETE_OPPORTUNITY: string[] = ["Admin", "SalesManager"];
 
@@ -68,9 +70,33 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
     error,
     actionPending,
   } = useOpportunitiesState();
+
+  // #region agent log
+  fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "8dbc10" },
+    body: JSON.stringify({
+      sessionId: "8dbc10",
+      location: "OpportunityDetail.tsx:render",
+      message: "OpportunityDetail render",
+      data: {
+        clientId,
+        clientName,
+        selectedOpportunityId: selectedOpportunity?.id ?? null,
+        isPending,
+        isError,
+        errorSnippet: error?.slice(0, 80) ?? null,
+        stageHistoryLength: stageHistory?.length ?? 0,
+      },
+      timestamp: Date.now(),
+      hypothesisId: "H1_H5",
+    }),
+  }).catch(() => {});
+  // #endregion
   const {
     updateOpportunity,
     setStage,
+    assignOpportunity,
     deleteOpportunity,
     loadOpportunity,
     loadStageHistory,
@@ -81,8 +107,23 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [stageModalOpen, setStageModalOpen] = useState(false);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
 
   const handleEditSuccess = () => {
+    // #region agent log
+    fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "8dbc10" },
+      body: JSON.stringify({
+        sessionId: "8dbc10",
+        location: "OpportunityDetail.tsx:handleEditSuccess",
+        message: "Edit success handler",
+        data: { selectedOpportunityId: selectedOpportunity?.id ?? null },
+        timestamp: Date.now(),
+        hypothesisId: "H4",
+      }),
+    }).catch(() => {});
+    // #endregion
     setEditModalOpen(false);
     if (selectedOpportunity) {
       loadOpportunity(selectedOpportunity.id);
@@ -112,6 +153,27 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
     }
   };
 
+  const handleAssignSuccess = () => {
+    // #region agent log
+    fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "8dbc10" },
+      body: JSON.stringify({
+        sessionId: "8dbc10",
+        location: "OpportunityDetail.tsx:handleAssignSuccess",
+        message: "Assign success handler",
+        data: { selectedOpportunityId: selectedOpportunity?.id ?? null },
+        timestamp: Date.now(),
+        hypothesisId: "H4",
+      }),
+    }).catch(() => {});
+    // #endregion
+    setAssignModalOpen(false);
+    if (selectedOpportunity) {
+      loadOpportunity(selectedOpportunity.id);
+    }
+  };
+
   const handleDelete = () => {
     if (!selectedOpportunity) return;
     Modal.confirm({
@@ -128,6 +190,20 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
   };
 
   if (isPending && !selectedOpportunity) {
+    // #region agent log
+    fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "8dbc10" },
+      body: JSON.stringify({
+        sessionId: "8dbc10",
+        location: "OpportunityDetail.tsx:loading-branch",
+        message: "Rendering loading spinner",
+        data: { isPending, hasSelected: !!selectedOpportunity },
+        timestamp: Date.now(),
+        hypothesisId: "H1",
+      }),
+    }).catch(() => {});
+    // #endregion
     return (
       <div
         style={{
@@ -156,6 +232,20 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
   }
 
   if (!selectedOpportunity) {
+    // #region agent log
+    fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "8dbc10" },
+      body: JSON.stringify({
+        sessionId: "8dbc10",
+        location: "OpportunityDetail.tsx:not-found-branch",
+        message: "Rendering opportunity not found",
+        data: { isPending, isError, clientId },
+        timestamp: Date.now(),
+        hypothesisId: "H1_H3",
+      }),
+    }).catch(() => {});
+    // #endregion
     return (
       <Space direction="vertical">
         <Link href={`/clients/${clientId}`}>
@@ -189,6 +279,12 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
     },
     ...(canAssignOrDelete
       ? [
+          {
+            key: "assign",
+            icon: <UserAddOutlined />,
+            label: "Assign to sales rep",
+            onClick: () => setAssignModalOpen(true),
+          },
           {
             key: "delete",
             icon: <DeleteOutlined />,
@@ -280,6 +376,7 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
       )}
 
       <OpportunityFormModal
+        onSubmit={async () => {}}
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
         onSuccess={handleEditSuccess}
@@ -296,6 +393,14 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
         onSuccess={handleStageSuccess}
         opportunity={opp}
         onSetStage={setStage}
+        loading={actionPending}
+      />
+      <AssignOpportunityModal
+        open={assignModalOpen}
+        onClose={() => setAssignModalOpen(false)}
+        onSuccess={handleAssignSuccess}
+        opportunity={opp}
+        onAssign={assignOpportunity}
         loading={actionPending}
       />
     </Space>

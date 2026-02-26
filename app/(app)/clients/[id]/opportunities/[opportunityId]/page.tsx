@@ -25,15 +25,33 @@ export default function OpportunityDetailPage() {
     }
   }, [clientId, loadClient, loadContactsByClient]);
 
+  // Clear selected opportunity only when leaving the page (unmount), not when effect re-runs
   useEffect(() => {
+    return () => {
+      clearSelectedOpportunity();
+    };
+  }, [clearSelectedOpportunity]);
+
+  useEffect(() => {
+    // #region agent log
+    fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "8dbc10" },
+      body: JSON.stringify({
+        sessionId: "8dbc10",
+        location: "opportunityId-page.tsx:effect",
+        message: "Opportunity effect run",
+        data: { opportunityId, clientId, hasOpportunityId: !!opportunityId },
+        timestamp: Date.now(),
+        hypothesisId: "H3",
+      }),
+    }).catch(() => {});
+    // #endregion
     if (opportunityId) {
       loadOpportunity(opportunityId);
       loadStageHistory(opportunityId);
     }
-    return () => {
-      clearSelectedOpportunity();
-    };
-  }, [opportunityId, loadOpportunity, loadStageHistory, clearSelectedOpportunity]);
+  }, [opportunityId, loadOpportunity, loadStageHistory]);
 
   if (!clientId || !opportunityId) {
     return null;

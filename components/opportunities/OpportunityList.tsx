@@ -20,7 +20,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   SwapOutlined,
-  UserOutlined,
+  UserAddOutlined,
   EyeOutlined,
 } from "@ant-design/icons";
 import { useAuthState } from "@/providers/auth-provider";
@@ -34,6 +34,7 @@ import {
 import type { OpportunityFormValues } from "./OpportunityFormModal";
 import { OpportunityFormModal } from "./OpportunityFormModal";
 import { StageChangeModal } from "./StageChangeModal";
+import { AssignOpportunityModal } from "./AssignOpportunityModal";
 
 const ROLES_CAN_ASSIGN_OR_DELETE_OPPORTUNITY: string[] = ["Admin", "SalesManager"];
 
@@ -74,6 +75,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
     createOpportunity,
     updateOpportunity,
     setStage,
+    assignOpportunity,
     deleteOpportunity,
   } = useOpportunitiesActions();
 
@@ -84,6 +86,8 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   const [editingOpportunity, setEditingOpportunity] = useState<IOpportunity | null>(null);
   const [stageModalOpen, setStageModalOpen] = useState(false);
   const [stageModalOpportunity, setStageModalOpportunity] = useState<IOpportunity | null>(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignModalOpportunity, setAssignModalOpportunity] = useState<IOpportunity | null>(null);
   const [stageFilter, setStageFilter] = useState<number | undefined>(undefined);
 
   useEffect(() => {
@@ -147,6 +151,17 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   const openStageModal = (record: IOpportunity) => {
     setStageModalOpportunity(record);
     setStageModalOpen(true);
+  };
+
+  const openAssignModal = (record: IOpportunity) => {
+    setAssignModalOpportunity(record);
+    setAssignModalOpen(true);
+  };
+
+  const handleAssignSuccess = () => {
+    setAssignModalOpen(false);
+    setAssignModalOpportunity(null);
+    loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
   };
 
   const handleStageSuccess = () => {
@@ -248,6 +263,12 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
           },
           ...(canAssignOrDelete
             ? [
+                {
+                  key: "assign",
+                  icon: <UserAddOutlined />,
+                  label: "Assign to sales rep",
+                  onClick: () => openAssignModal(record),
+                },
                 {
                   key: "delete",
                   icon: <DeleteOutlined />,
@@ -354,6 +375,17 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
         onSuccess={handleStageSuccess}
         opportunity={stageModalOpportunity}
         onSetStage={setStage}
+        loading={actionPending}
+      />
+      <AssignOpportunityModal
+        open={assignModalOpen}
+        onClose={() => {
+          setAssignModalOpen(false);
+          setAssignModalOpportunity(null);
+        }}
+        onSuccess={handleAssignSuccess}
+        opportunity={assignModalOpportunity}
+        onAssign={assignOpportunity}
         loading={actionPending}
       />
     </Space>
