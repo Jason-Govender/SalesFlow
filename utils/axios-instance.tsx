@@ -4,8 +4,11 @@ import { authEvents } from "./auth-events";
 
 
 
+const baseURL =
+  (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").trim() || "http://localhost:3000";
+
 export const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseURL,
   headers: { "Content-Type": "application/json" },
 });
 

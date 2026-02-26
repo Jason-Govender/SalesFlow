@@ -27,8 +27,8 @@ export const initAuthPending = createAction<IAuthStateContext>(
     isSuccess: false,
     isError: false,
     error: undefined,
+    isAuthReady: false,
     // Keep session as-is while pending, so app doesn't "flash logout" on refresh.
-    // If you prefer clearing it, change to session: undefined.
   })
 );
 
@@ -41,6 +41,7 @@ export const initAuthSuccess = createAction<
   isError: false,
   error: undefined,
   session,
+  isAuthReady: true,
 }));
 
 export const initAuthError = createAction<IAuthStateContext, string>(
@@ -51,6 +52,7 @@ export const initAuthError = createAction<IAuthStateContext, string>(
     isError: true,
     error,
     session: undefined,
+    isAuthReady: true,
   })
 );
 
@@ -64,6 +66,7 @@ export const loginPending = createAction<IAuthStateContext>(
     isSuccess: false,
     isError: false,
     error: undefined,
+    isAuthReady: true,
   })
 );
 
@@ -75,6 +78,7 @@ export const loginSuccess = createAction<IAuthStateContext, IAuthSession>(
     isError: false,
     error: undefined,
     session,
+    isAuthReady: true,
   })
 );
 
@@ -86,6 +90,7 @@ export const loginError = createAction<IAuthStateContext, string>(
     isError: true,
     error,
     session: undefined,
+    isAuthReady: true,
   })
 );
 
@@ -99,6 +104,7 @@ export const registerPending = createAction<IAuthStateContext>(
     isSuccess: false,
     isError: false,
     error: undefined,
+    isAuthReady: true,
   })
 );
 
@@ -110,6 +116,7 @@ export const registerSuccess = createAction<IAuthStateContext, IAuthSession>(
     isError: false,
     error: undefined,
     session,
+    isAuthReady: true,
   })
 );
 
@@ -121,6 +128,7 @@ export const registerError = createAction<IAuthStateContext, string>(
     isError: true,
     error,
     session: undefined,
+    isAuthReady: true,
   })
 );
 
@@ -135,5 +143,6 @@ export const logout = createAction<IAuthStateContext>(
     isError: false,
     error: undefined,
     session: undefined,
+    isAuthReady: true,
   })
 );

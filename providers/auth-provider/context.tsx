@@ -84,6 +84,8 @@ export interface IAuthStateContext {
   isSuccess: boolean;
   isError: boolean;
   error?: string;
+  /** True once initial session restore from storage has completed (so guards can avoid flashing). */
+  isAuthReady: boolean;
 }
 
 export const INITIAL_AUTH_STATE: IAuthStateContext = {
@@ -92,10 +94,11 @@ export const INITIAL_AUTH_STATE: IAuthStateContext = {
   isSuccess: false,
   isError: false,
   error: undefined,
+  isAuthReady: false,
 };
 
 export interface IAuthActionContext {
-  initAuth: () => void;
+  initAuth: () => Promise<void>;
   login: (credentials: { email: string; password: string }) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => void;
