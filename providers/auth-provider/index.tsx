@@ -14,6 +14,7 @@ import {
   AuthActionContext,
   INITIAL_AUTH_STATE,
   IAuthSession,
+  RegisterPayload,
 } from "./context";
 
 import { AuthReducer } from "./reducer";
@@ -23,12 +24,21 @@ import {
   loginPending,
   loginSuccess,
   loginError,
+  registerPending,
+  registerSuccess,
+  registerError,
   logout as logoutAction,
 } from "./actions";
 
 import { authSessionStorage } from "../../utils/auth-session-storage";
 import { authService } from "../../utils/auth-service";
 import { authEvents } from "../../utils/auth-events";
+
+const isExpired = (expiresAt: string) => {
+  const expiryMs = new Date(expiresAt).getTime();
+  if (Number.isNaN(expiryMs)) return true;
+  return Date.now() >= expiryMs;
+};
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, dispatch] = useReducer(AuthReducer, INITIAL_AUTH_STATE);
@@ -40,33 +50,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     router.replace("/login");
   }, [router]);
 
-const initAuth = useCallback(async () => {
-  dispatch(initAuthPending());
+  const initAuth = useCallback(async () => {
+    dispatch(initAuthPending());
 
-  const storedSession = authSessionStorage.get();
+    const storedSession = authSessionStorage.get();
 
-  if (!storedSession) {
-    dispatch(initAuthSuccess(undefined));
-    return;
-  }
+    if (!storedSession) {
+      dispatch(initAuthSuccess(undefined));
+      return;
+    }
+    if (isExpired(storedSession.expiresAt)) {
+      logout();
+      return;
+    }
 
-  try {
-    const userData = await authService.me();
-
-    const refreshedSession: IAuthSession = {
-      ...storedSession,
-      ...userData,
-    };
-
-    authSessionStorage.set(refreshedSession);
-    dispatch(initAuthSuccess(refreshedSession));
-  } catch {
-    logout(); 
-  }
-}, [logout]);
-
-
-
+    dispatch(initAuthSuccess(storedSession));
+  }, [logout]);
 
   const login = useCallback(
     async (credentials: { email: string; password: string }) => {
@@ -77,7 +76,6 @@ const initAuth = useCallback(async () => {
         authSessionStorage.set(session);
         dispatch(loginSuccess(session));
       } catch (error: unknown) {
-
         const message =
           error instanceof Error ? error.message : "Authentication failed.";
         dispatch(loginError(message));
@@ -86,19 +84,31 @@ const initAuth = useCallback(async () => {
     []
   );
 
+  const register = useCallback(async (payload: RegisterPayload) => {
+    dispatch(registerPending());
+
+    try {
+      const session: IAuthSession = await authService.register(payload);
+      authSessionStorage.set(session);
+      dispatch(registerSuccess(session));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Registration failed.";
+      dispatch(registerError(message));
+    }
+  }, []);
+
   useEffect(() => {
     initAuth();
   }, [initAuth]);
 
   useEffect(() => {
     const unsubscribe = authEvents.on("UNAUTHORIZED", () => {
-      authSessionStorage.clear();
-      dispatch(logoutAction());
-      router.replace("/login");
+      logout();
     });
 
     return unsubscribe;
-  }, [router]);
+  }, [logout]);
 
   const stateValue = useMemo(() => state, [state]);
 
@@ -106,9 +116,10 @@ const initAuth = useCallback(async () => {
     () => ({
       initAuth,
       login,
+      register,
       logout,
     }),
-    [initAuth, login, logout]
+    [initAuth, login, register, logout]
   );
 
   return (
@@ -119,7 +130,6 @@ const initAuth = useCallback(async () => {
     </AuthStateContext.Provider>
   );
 };
-
 
 export const useAuthState = () => {
   const context = useContext(AuthStateContext);
