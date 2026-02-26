@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, Form, Input, Select, DatePicker, Button, Alert } from "antd";
 import dayjs from "dayjs";
 import { useProposalsActions } from "@/providers/proposals-provider";
+import { useClientsState, useClientsActions } from "@/providers/clients-provider";
+import { useOpportunitiesState, useOpportunitiesActions } from "@/providers/opportunities-provider";
 import type { ICreateProposalRequest } from "@/utils/proposals-service";
 import { useAppPageStyles } from "../../pageStyles";
 
@@ -18,11 +20,47 @@ const CURRENCIES = [
 export default function NewProposalPage() {
   const { styles } = useAppPageStyles();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const clientIdFromQuery = searchParams.get("clientId") ?? undefined;
+  const opportunityIdFromQuery = searchParams.get("opportunityId") ?? undefined;
+  const prefilledFromContext = Boolean(clientIdFromQuery && opportunityIdFromQuery);
+
   const { createProposal } = useProposalsActions();
+  const { clients } = useClientsState();
+  const { loadClients } = useClientsActions();
+  const { loadOpportunitiesByClient } = useOpportunitiesActions();
+  const { opportunities } = useOpportunitiesState();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    loadClients({ pageSize: 200 });
+  }, [loadClients]);
+
+  useEffect(() => {
+    if (clientIdFromQuery) {
+      loadOpportunitiesByClient(clientIdFromQuery, { pageSize: 100 });
+    }
+  }, [clientIdFromQuery, loadOpportunitiesByClient]);
+
+  const clientOptions = (clients ?? []).map((c) => ({
+    value: c.id,
+    label: c.name,
+  }));
+
+  const opportunityOptions = (opportunities ?? []).map((o) => ({
+    value: o.id,
+    label: o.title,
+  }));
+
+  const selectedClientId = Form.useWatch("clientId", form) || clientIdFromQuery;
+  useEffect(() => {
+    if (selectedClientId && !prefilledFromContext) {
+      loadOpportunitiesByClient(selectedClientId, { pageSize: 100 });
+    }
+  }, [selectedClientId, prefilledFromContext, loadOpportunitiesByClient]);
 
   const handleFinish = async (values: {
     title: string;
@@ -75,21 +113,38 @@ export default function NewProposalPage() {
           initialValues={{
             currency: "ZAR",
             validUntil: dayjs().add(30, "day"),
+            clientId: clientIdFromQuery,
+            opportunityId: opportunityIdFromQuery,
           }}
         >
           <Form.Item
-            name="opportunityId"
-            label="Opportunity ID"
-            rules={[{ required: true, message: "Opportunity ID is required" }]}
+            name="clientId"
+            label="Client"
+            rules={[{ required: true, message: "Client is required" }]}
           >
-            <Input placeholder="Paste opportunity GUID" />
+            <Select
+              placeholder="Select client"
+              showSearch
+              optionFilterProp="label"
+              options={clientOptions}
+              disabled={prefilledFromContext}
+              allowClear={!prefilledFromContext}
+              onClear={() => form.setFieldValue("opportunityId", undefined)}
+            />
           </Form.Item>
           <Form.Item
-            name="clientId"
-            label="Client ID"
-            rules={[{ required: true, message: "Client ID is required" }]}
+            name="opportunityId"
+            label="Opportunity"
+            rules={[{ required: true, message: "Opportunity is required" }]}
           >
-            <Input placeholder="Paste client GUID" />
+            <Select
+              placeholder="Select opportunity"
+              showSearch
+              optionFilterProp="label"
+              options={opportunityOptions}
+              disabled={prefilledFromContext || !selectedClientId}
+              allowClear={!prefilledFromContext}
+            />
           </Form.Item>
           <Form.Item
             name="title"

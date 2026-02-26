@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import { Card, Button, Space, Alert, Spin, Typography } from "antd";
 import { useProposalsState, useProposalsActions } from "@/providers/proposals-provider";
+import { useClientsState, useClientsActions } from "@/providers/clients-provider";
+import { useOpportunitiesState, useOpportunitiesActions } from "@/providers/opportunities-provider";
 import { useAuthState } from "@/providers/auth-provider";
 import { ApprovalBanner } from "@/components/proposals/ApprovalBanner";
 import { ProposalLineItemTable } from "@/components/proposals/ProposalLineItemTable";
@@ -52,6 +55,11 @@ export default function ProposalDetailPage() {
     clearSelectedProposal,
   } = useProposalsActions();
 
+  const { selectedClient } = useClientsState();
+  const { loadClient } = useClientsActions();
+  const { selectedOpportunity } = useOpportunitiesState();
+  const { loadOpportunity } = useOpportunitiesActions();
+
   const [lineItemModalOpen, setLineItemModalOpen] = useState(false);
   const [editingLineItem, setEditingLineItem] = useState<IProposalLineItem | null>(null);
 
@@ -62,7 +70,13 @@ export default function ProposalDetailPage() {
     return () => {
       clearSelectedProposal();
     };
-  }, [id]);
+  }, [id, loadProposal, clearSelectedProposal]);
+
+  useEffect(() => {
+    if (!selectedProposal) return;
+    loadClient(selectedProposal.clientId);
+    loadOpportunity(selectedProposal.opportunityId);
+  }, [selectedProposal, loadClient, loadOpportunity]);
 
   const handleAddLineItem = () => {
     setEditingLineItem(null);
@@ -153,6 +167,29 @@ export default function ProposalDetailPage() {
             <Text type="secondary">
               Status: {PROPOSAL_STATUS_LABELS[selectedProposal.status as ProposalStatus]}
             </Text>
+            <div style={{ marginTop: 4 }}>
+              <Text type="secondary">
+                <strong>Client:</strong>{" "}
+                {selectedClient?.id === selectedProposal.clientId ? (
+                  <Link href={`/clients/${selectedProposal.clientId}`}>
+                    {selectedClient.name}
+                  </Link>
+                ) : (
+                  <Link href={`/clients/${selectedProposal.clientId}`}>View client</Link>
+                )}
+                {" · "}
+                <strong>Opportunity:</strong>{" "}
+                {selectedOpportunity?.id === selectedProposal.opportunityId ? (
+                  <Link href={`/clients/${selectedProposal.clientId}/opportunities/${selectedProposal.opportunityId}`}>
+                    {selectedOpportunity.title}
+                  </Link>
+                ) : (
+                  <Link href={`/clients/${selectedProposal.clientId}/opportunities/${selectedProposal.opportunityId}`}>
+                    View opportunity
+                  </Link>
+                )}
+              </Text>
+            </div>
           </div>
           {isDraft && (
             <Space>
