@@ -75,6 +75,30 @@ export interface IPipelineMetrics {
   weightedPipelineValue?: number;
 }
 
+/**
+ * Sales performance item (GET /api/dashboard/sales-performance).
+ * Top N sales reps by performance. Admin / SalesManager only.
+ */
+export interface ISalesPerformanceItem {
+  userId?: string;
+  name?: string;
+  totalValue?: number;
+  opportunityCount?: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Contract expiring item (GET /api/dashboard/contracts-expiring).
+ * Contracts expiring within N days. Admin / SalesManager only.
+ */
+export interface IContractExpiring {
+  id?: string;
+  clientName?: string;
+  endDate?: string;
+  contractValue?: number;
+  [key: string]: unknown;
+}
+
 const extractErrorMessage = (error: unknown, fallback: string): string => {
   if (typeof error === "string") return error;
 
@@ -131,6 +155,38 @@ export const dashboardService = {
       const message = extractErrorMessage(
         error,
         "Failed to load pipeline metrics."
+      );
+      throw new Error(message);
+    }
+  },
+
+  async getSalesPerformance(topCount = 5): Promise<ISalesPerformanceItem[]> {
+    try {
+      const response = await axiosInstance.get<ISalesPerformanceItem[]>(
+        "/api/dashboard/sales-performance",
+        { params: { topCount } }
+      );
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error: unknown) {
+      const message = extractErrorMessage(
+        error,
+        "Failed to load sales performance."
+      );
+      throw new Error(message);
+    }
+  },
+
+  async getContractsExpiring(days = 30): Promise<IContractExpiring[]> {
+    try {
+      const response = await axiosInstance.get<IContractExpiring[]>(
+        "/api/dashboard/contracts-expiring",
+        { params: { days } }
+      );
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error: unknown) {
+      const message = extractErrorMessage(
+        error,
+        "Failed to load contracts expiring."
       );
       throw new Error(message);
     }

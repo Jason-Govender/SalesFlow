@@ -79,10 +79,7 @@ export function PipelineChart({ stages, weightedValue }: PipelineChartProps) {
   };
 
   return (
-    <ConfigProvider
-      theme={ORANGE_THEME}
-      common={{ theme: ORANGE_THEME }}
-    >
+    <ConfigProvider common={{ theme: ORANGE_THEME }}>
       <div>
         {weightedValue != null && (
           <div

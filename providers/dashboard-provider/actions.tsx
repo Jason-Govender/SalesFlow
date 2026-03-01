@@ -3,11 +3,15 @@ import type { IDashboardStateContext } from "./context";
 import type {
   IDashboardOverview,
   IPipelineMetrics,
+  ISalesPerformanceItem,
+  IContractExpiring,
 } from "../../utils/dashboard-service";
 
 export interface IDashboardLoadSuccessPayload {
   overview: IDashboardOverview;
   pipelineMetrics: IPipelineMetrics;
+  salesPerformance: ISalesPerformanceItem[] | null;
+  contractsExpiring: IContractExpiring[] | null;
 }
 
 export enum DashboardActionEnums {
@@ -35,6 +39,8 @@ export const loadDashboardSuccess = createAction<
   error: undefined,
   overview: payload.overview,
   pipelineMetrics: payload.pipelineMetrics,
+  salesPerformance: payload.salesPerformance,
+  contractsExpiring: payload.contractsExpiring,
 }));
 
 export const loadDashboardError = createAction<IDashboardStateContext, string>(
@@ -45,5 +51,7 @@ export const loadDashboardError = createAction<IDashboardStateContext, string>(
     error,
     overview: null,
     pipelineMetrics: null,
+    salesPerformance: null,
+    contractsExpiring: null,
   })
 );
