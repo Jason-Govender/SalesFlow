@@ -13,6 +13,7 @@ import {
   Input,
   Checkbox,
   Tag,
+  Typography,
 } from "antd";
 import type { MenuProps } from "antd";
 import { PlusOutlined, MoreOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
@@ -38,16 +39,20 @@ function truncate(str: string, max: number): string {
 }
 
 interface NoteListProps {
-  clientId: string;
+  /** When set, list is scoped to this client. */
+  clientId?: string;
+  /** When set, list is scoped to this opportunity (takes precedence over clientId for loading). */
+  opportunityId?: string;
 }
 
-export function NoteList({ clientId }: NoteListProps) {
+export function NoteList({ clientId, opportunityId }: NoteListProps) {
   const { session } = useAuthState();
   const currentUserId = session?.user?.userId;
 
   const { notes, isPending, isError, error, actionPending } = useNotesState();
   const {
     loadNotesByClient,
+    loadNotesByOpportunity,
     clearNotes,
     createNote,
     updateNote,
@@ -55,18 +60,21 @@ export function NoteList({ clientId }: NoteListProps) {
   } = useNotesActions();
 
   const [formModalOpen, setFormModalOpen] = useState(false);
+  const [viewModalNote, setViewModalNote] = useState<INote | null>(null);
   const [editingNote, setEditingNote] = useState<INote | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
-    if (clientId) {
+    if (opportunityId) {
+      loadNotesByOpportunity(opportunityId);
+    } else if (clientId) {
       loadNotesByClient(clientId);
     }
     return () => {
       clearNotes();
     };
-  }, [clientId, loadNotesByClient, clearNotes]);
+  }, [clientId, opportunityId, loadNotesByClient, loadNotesByOpportunity, clearNotes]);
 
   const handleAdd = () => {
     setEditingNote(null);
@@ -95,7 +103,7 @@ export function NoteList({ clientId }: NoteListProps) {
       } else {
         await createNote({
           content,
-          clientId,
+          ...(opportunityId ? { opportunityId } : clientId ? { clientId } : {}),
           isPrivate: values.isPrivate ?? false,
         });
       }
@@ -116,8 +124,23 @@ export function NoteList({ clientId }: NoteListProps) {
       cancelText: "Cancel",
       onOk: async () => {
         await deleteNote(note.id);
+        setViewModalNote((prev) => (prev?.id === note.id ? null : prev));
       },
     });
+  };
+
+  const openViewModal = (note: INote) => setViewModalNote(note);
+  const closeViewModal = () => setViewModalNote(null);
+
+  const handleEditFromView = () => {
+    if (!viewModalNote) return;
+    closeViewModal();
+    handleEdit(viewModalNote);
+  };
+
+  const handleDeleteFromView = () => {
+    if (!viewModalNote) return;
+    handleDelete(viewModalNote);
   };
 
   const canEditNote = (note: INote): boolean => {
@@ -131,7 +154,16 @@ export function NoteList({ clientId }: NoteListProps) {
     {
       title: "Content",
       key: "content",
-      render: (_: unknown, record: INote) => truncate(record.content ?? "", MAX_CONTENT_PREVIEW),
+      render: (_: unknown, record: INote) => (
+        <a
+          onClick={(e) => {
+            e.stopPropagation();
+            openViewModal(record);
+          }}
+        >
+          {truncate(record.content ?? "", MAX_CONTENT_PREVIEW)}
+        </a>
+      ),
     },
     {
       title: "Date",
@@ -167,12 +199,20 @@ export function NoteList({ clientId }: NoteListProps) {
             icon: <DeleteOutlined />,
             label: "Delete",
             danger: true,
-            onClick: () => handleDelete(record),
+            onClick: (e) => {
+              e.domEvent?.stopPropagation?.();
+              handleDelete(record);
+            },
           },
         ];
         return (
           <Dropdown menu={{ items }} trigger={["click"]}>
-            <Button type="text" size="small" icon={<MoreOutlined />} />
+            <Button
+              type="text"
+              size="small"
+              icon={<MoreOutlined />}
+              onClick={(e) => e.stopPropagation()}
+            />
           </Dropdown>
         );
       },
@@ -203,7 +243,17 @@ export function NoteList({ clientId }: NoteListProps) {
           type="error"
           showIcon
           action={
-            <Button type="link" size="small" onClick={() => loadNotesByClient(clientId)}>
+            <Button
+              type="link"
+              size="small"
+              onClick={() =>
+                opportunityId
+                  ? loadNotesByOpportunity(opportunityId)
+                  : clientId
+                    ? loadNotesByClient(clientId)
+                    : undefined
+              }
+            >
               Retry
             </Button>
           }
@@ -220,7 +270,54 @@ export function NoteList({ clientId }: NoteListProps) {
         rowKey="id"
         columns={columns}
         pagination={false}
+        onRow={(record) => ({
+          onClick: () => openViewModal(record),
+          style: { cursor: "pointer" },
+        })}
       />
+      <Modal
+        title="Note"
+        open={!!viewModalNote}
+        onCancel={closeViewModal}
+        footer={
+          viewModalNote ? (
+            <Space>
+              {canEditNote(viewModalNote) && (
+                <Button icon={<EditOutlined />} onClick={handleEditFromView}>
+                  Edit
+                </Button>
+              )}
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                onClick={handleDeleteFromView}
+              >
+                Delete
+              </Button>
+              <Button onClick={closeViewModal}>Close</Button>
+            </Space>
+          ) : null
+        }
+        destroyOnClose
+      >
+        {viewModalNote && (
+          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+            <Typography.Paragraph
+              style={{ marginBottom: 0, whiteSpace: "pre-wrap" }}
+            >
+              {viewModalNote.content || "—"}
+            </Typography.Paragraph>
+            <Space>
+              <Typography.Text type="secondary">
+                {formatDate(viewModalNote.createdAt)}
+              </Typography.Text>
+              {viewModalNote.isPrivate && (
+                <Tag color="default">Private</Tag>
+              )}
+            </Space>
+          </Space>
+        )}
+      </Modal>
       <Modal
         title={editingNote ? "Edit note" : "Add note"}
         open={formModalOpen}

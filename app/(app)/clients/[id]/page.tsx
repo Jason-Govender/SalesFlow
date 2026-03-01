@@ -127,8 +127,8 @@ export default function ClientDetailPage() {
   const handleDelete = () => {
     if (!id) return;
     Modal.confirm({
-      title: "Soft-delete client",
-      content: "Are you sure you want to soft-delete this client?",
+      title: "Delete client",
+      content: "Are you sure you want to delete this client?",
       okText: "Delete",
       okType: "danger",
       cancelText: "Cancel",
@@ -271,7 +271,7 @@ export default function ClientDetailPage() {
             items={[
               { key: "contacts", label: "Contacts", children: id ? <ContactList clientId={id} /> : null },
               { key: "opportunities", label: "Opportunities", children: id ? <OpportunityList clientId={id} /> : null },
-              { key: "proposals", label: "Proposals", children: id ? <ProposalList clientId={id} showCreateButton createHref={`/proposals/new?clientId=${id}`} /> : null },
+              { key: "proposals", label: "Proposals", children: id ? <ProposalList clientId={id} showCreateButton createHref={`/opportunities/proposals/new?clientId=${id}`} /> : null },
               { key: "contracts", label: "Contracts", children: id ? <ContractList clientId={id} /> : null },
               { key: "activities", label: "Activities", children: id ? <ActivityList relatedToType={RelatedToType.Client} relatedToId={id} /> : null },
               { key: "documents", label: "Documents", children: id ? <DocumentList clientId={id} /> : null },

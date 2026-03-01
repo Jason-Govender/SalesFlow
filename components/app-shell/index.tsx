@@ -9,6 +9,7 @@ import {
   FolderOutlined,
   TeamOutlined,
   CalendarOutlined,
+  FileTextOutlined,
   DollarOutlined,
   DownOutlined,
   LogoutOutlined,
@@ -33,13 +34,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { session } = useAuthState();
   const { logout } = useAuthActions();
-
   const menuItems: MenuProps["items"] = [
     { key: "/", icon: <HomeOutlined />, label: <Link href="/">Dashboard</Link> },
     {
-      key: "/proposals",
+      key: "/opportunities",
       icon: <FolderOutlined />,
-      label: <Link href="/proposals">Proposals</Link>,
+      label: <Link href="/opportunities">Opportunities</Link>,
     },
     {
       key: "/clients",
@@ -52,19 +52,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       label: <Link href="/activities">Activities</Link>,
     },
     {
+      key: "/contracts",
+      icon: <FileTextOutlined />,
+      label: <Link href="/contracts">Contracts</Link>,
+    },
+    {
       key: "/pricing-requests",
       icon: <DollarOutlined />,
       label: <Link href="/pricing-requests">Pricing Requests</Link>,
     },
   ];
 
-  const pathKeys = ["/", "/proposals", "/clients", "/activities", "/pricing-requests"];
+  const pathKeys = ["/", "/opportunities", "/clients", "/activities", "/contracts", "/pricing-requests"];
   const selectedKey =
     pathname === "/"
       ? "/"
-      : pathKeys
-          .filter((k) => k !== "/" && pathname.startsWith(k))
-          .sort((a, b) => b.length - a.length)[0] ?? pathname;
+      : pathname?.startsWith("/opportunities")
+        ? "/opportunities"
+        : pathname?.startsWith("/contracts")
+          ? "/contracts"
+          : pathname?.startsWith("/pricing-requests")
+            ? "/pricing-requests"
+            : pathKeys
+              .filter((k) => k !== "/" && k !== "/opportunities" && k !== "/contracts" && k !== "/pricing-requests" && pathname.startsWith(k))
+              .sort((a, b) => b.length - a.length)[0] ?? pathname;
+
 
   const userDropdownItems: MenuProps["items"] = [
     {

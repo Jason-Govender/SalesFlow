@@ -52,10 +52,13 @@ function triggerDownload(blob: Blob, fileName: string) {
 }
 
 interface DocumentListProps {
-  clientId: string;
+  /** When set, list is scoped to this client. */
+  clientId?: string;
+  /** When set, list is scoped to this opportunity (takes precedence over clientId for loading). */
+  opportunityId?: string;
 }
 
-export function DocumentList({ clientId }: DocumentListProps) {
+export function DocumentList({ clientId, opportunityId }: DocumentListProps) {
   const { session } = useAuthState();
   const userRoles = session?.user?.roles ?? [];
   const canDeleteDocument = userRoles.some((r) =>
@@ -71,6 +74,7 @@ export function DocumentList({ clientId }: DocumentListProps) {
   } = useDocumentsState();
   const {
     loadDocumentsByClient,
+    loadDocumentsByOpportunity,
     clearDocuments,
     deleteDocument,
   } = useDocumentsActions();
@@ -92,17 +96,20 @@ export function DocumentList({ clientId }: DocumentListProps) {
   }, []);
 
   useEffect(() => {
-    if (clientId) {
+    if (opportunityId) {
+      loadDocumentsByOpportunity(opportunityId);
+    } else if (clientId) {
       loadDocumentsByClient(clientId);
     }
     return () => {
       clearDocuments();
     };
-  }, [clientId, loadDocumentsByClient, clearDocuments]);
+  }, [clientId, opportunityId, loadDocumentsByClient, loadDocumentsByOpportunity, clearDocuments]);
 
   const handleUploadSuccess = () => {
     setUploadModalOpen(false);
-    if (clientId) loadDocumentsByClient(clientId);
+    if (opportunityId) loadDocumentsByOpportunity(opportunityId);
+    else if (clientId) loadDocumentsByClient(clientId);
   };
 
   const handleDelete = (doc: IDocument) => {
@@ -123,7 +130,17 @@ export function DocumentList({ clientId }: DocumentListProps) {
       title: "File name",
       dataIndex: "fileName",
       key: "fileName",
-      render: (val: string) => val || "—",
+      render: (val: string, record: IDocument) => (
+        <a
+          onClick={(e) => {
+            e.stopPropagation();
+            if (downloadingId !== record.id) handleDownload(record);
+          }}
+          style={{ pointerEvents: downloadingId === record.id ? "none" : undefined }}
+        >
+          {val || "—"}
+        </a>
+      ),
     },
     {
       title: "Description",
@@ -153,7 +170,10 @@ export function DocumentList({ clientId }: DocumentListProps) {
             key: "download",
             icon: <DownloadOutlined />,
             label: "Download",
-            onClick: () => handleDownload(record),
+            onClick: (e: unknown) => {
+              (e as { domEvent?: { stopPropagation?: () => void } }).domEvent?.stopPropagation?.();
+              handleDownload(record);
+            },
             disabled: downloadingId === record.id,
           },
           ...(canDeleteDocument
@@ -163,18 +183,25 @@ export function DocumentList({ clientId }: DocumentListProps) {
                   icon: <DeleteOutlined />,
                   label: "Delete",
                   danger: true,
-                  onClick: () => handleDelete(record),
+                  onClick: (e: unknown) => {
+                    (e as { domEvent?: { stopPropagation?: () => void } }).domEvent?.stopPropagation?.();
+                    handleDelete(record);
+                  },
                 },
               ]
             : []),
         ];
         return (
-          <Dropdown menu={{ items }} trigger={["click"]}>
+          <Dropdown
+            menu={{ items }}
+            trigger={["click"]}
+          >
             <Button
               type="text"
               size="small"
               icon={<MoreOutlined />}
               loading={downloadingId === record.id}
+              onClick={(e) => e.stopPropagation()}
             />
           </Dropdown>
         );
@@ -209,7 +236,13 @@ export function DocumentList({ clientId }: DocumentListProps) {
             <Button
               type="link"
               size="small"
-              onClick={() => loadDocumentsByClient(clientId)}
+              onClick={() =>
+                opportunityId
+                  ? loadDocumentsByOpportunity(opportunityId)
+                  : clientId
+                    ? loadDocumentsByClient(clientId)
+                    : undefined
+              }
             >
               Retry
             </Button>
@@ -231,12 +264,19 @@ export function DocumentList({ clientId }: DocumentListProps) {
         rowKey="id"
         columns={columns}
         pagination={false}
+        onRow={(record) => ({
+          onClick: () => {
+            if (!downloadingId) handleDownload(record);
+          },
+          style: { cursor: downloadingId ? "wait" : "pointer" },
+        })}
       />
       <DocumentUploadModal
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
         onSuccess={handleUploadSuccess}
         clientId={clientId}
+        opportunityId={opportunityId}
         loading={actionPending}
       />
     </Space>

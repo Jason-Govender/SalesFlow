@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { Modal, Form, Input, Button } from "antd";
+import { Modal, Form, Button } from "antd";
 import type { IOpportunity } from "@/utils/opportunities-service";
+import { SalesRepSelect } from "@/components/SalesRepSelect";
 
 interface AssignOpportunityModalProps {
   open: boolean;
@@ -31,7 +32,7 @@ export function AssignOpportunityModal({
 
   const handleFinish = async (values: { userId: string }) => {
     if (!opportunity) return;
-    const userId = values.userId.trim();
+    const userId = (values.userId ?? "").trim();
     if (!userId) return;
     try {
       await onAssign(opportunity.id, userId);
@@ -53,10 +54,10 @@ export function AssignOpportunityModal({
       <Form form={form} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           name="userId"
-          label="Sales rep user ID"
-          rules={[{ required: true, message: "User ID is required" }]}
+          label="Sales rep"
+          rules={[{ required: true, message: "Please select a sales rep" }]}
         >
-          <Input placeholder="Paste the sales rep's user ID (GUID)" />
+          <SalesRepSelect placeholder="Search by name or email..." />
         </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading}>

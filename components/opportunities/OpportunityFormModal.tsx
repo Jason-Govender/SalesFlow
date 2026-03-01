@@ -11,6 +11,11 @@ import {
 } from "@/utils/opportunities-service";
 import type { IContact } from "@/utils/contacts-service";
 
+export interface ClientOption {
+  id: string;
+  name: string;
+}
+
 const STAGE_OPTIONS = Object.entries(OPPORTUNITY_STAGE_LABELS).map(([value, label]) => ({
   value: Number(value),
   label,
@@ -23,6 +28,7 @@ const SOURCE_OPTIONS = Object.entries(OPPORTUNITY_SOURCE_LABELS).map(([value, la
 
 export interface OpportunityFormValues {
   title: string;
+  clientId?: string;
   contactId?: string;
   estimatedValue?: number;
   currency: string;
@@ -37,9 +43,10 @@ interface OpportunityFormModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  clientId: string;
+  clientId?: string;
   opportunity?: IOpportunity | null;
   contacts: IContact[];
+  clients?: ClientOption[];
   onSubmit: (values: OpportunityFormValues) => Promise<unknown>;
   onUpdate?: (id: string, values: OpportunityFormValues) => Promise<unknown>;
   loading?: boolean;
@@ -50,9 +57,10 @@ export function OpportunityFormModal({
   open,
   onClose,
   onSuccess,
-  clientId,
+  clientId: contextClientId,
   opportunity,
   contacts,
+  clients = [],
   onSubmit,
   onUpdate,
   loading = false,
@@ -60,12 +68,15 @@ export function OpportunityFormModal({
 }: OpportunityFormModalProps) {
   const [form] = Form.useForm<OpportunityFormValues>();
   const isEdit = Boolean(opportunity?.id);
+  const requireClientSelect = !contextClientId && !isEdit;
+
+  const effectiveClientId = contextClientId ?? form.getFieldValue("clientId");
 
   useEffect(() => {
-    if (open && clientId && loadContacts) {
-      loadContacts(clientId);
+    if (open && effectiveClientId && loadContacts) {
+      loadContacts(effectiveClientId);
     }
-  }, [open, clientId, loadContacts]);
+  }, [open, effectiveClientId, loadContacts]);
 
   useEffect(() => {
     if (open) {
@@ -87,6 +98,7 @@ export function OpportunityFormModal({
       } else {
         form.setFieldsValue({
           title: "",
+          clientId: undefined,
           contactId: undefined,
           estimatedValue: undefined,
           currency: "ZAR",
@@ -124,9 +136,11 @@ export function OpportunityFormModal({
     label: `${c.firstName} ${c.lastName}`.trim() || c.email,
   }));
 
+  const clientOptions = clients.map((c) => ({ value: c.id, label: c.name }));
+
   return (
     <Modal
-      title={isEdit ? "Edit opportunity" : "Add opportunity"}
+      title={isEdit ? "Edit opportunity" : "Create opportunity"}
       open={open}
       onCancel={onClose}
       footer={null}
@@ -136,7 +150,26 @@ export function OpportunityFormModal({
         form={form}
         layout="vertical"
         onFinish={handleFinish}
+        onValuesChange={(_, all) => {
+          if (requireClientSelect && all.clientId && loadContacts) {
+            loadContacts(all.clientId);
+          }
+        }}
       >
+        {requireClientSelect && (
+          <Form.Item
+            name="clientId"
+            label="Client"
+            rules={[{ required: true, message: "Client is required" }]}
+          >
+            <Select
+              placeholder="Select client"
+              options={clientOptions}
+              showSearch
+              optionFilterProp="label"
+            />
+          </Form.Item>
+        )}
         <Form.Item
           name="title"
           label="Title"

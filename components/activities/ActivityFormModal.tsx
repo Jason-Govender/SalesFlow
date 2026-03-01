@@ -9,8 +9,8 @@ import {
   Priority,
   PRIORITY_LABELS,
   RelatedToType,
-  RELATED_TO_TYPE_LABELS,
 } from "@/utils/activities-service";
+import { useClientsState, useClientsActions } from "@/providers/clients-provider";
 
 const TYPE_OPTIONS = Object.entries(ACTIVITY_TYPE_LABELS).map(([value, label]) => ({
   value: Number(value),
@@ -22,18 +22,12 @@ const PRIORITY_OPTIONS = Object.entries(PRIORITY_LABELS).map(([value, label]) =>
   label,
 }));
 
-const RELATED_TO_OPTIONS = Object.entries(RELATED_TO_TYPE_LABELS).map(([value, label]) => ({
-  value: Number(value),
-  label,
-}));
-
 export interface ActivityFormValues {
   type: number;
   subject: string;
   description?: string;
   priority?: number;
   dueDate: string;
-  assignedToId?: string;
   relatedToType?: number;
   relatedToId?: string;
   duration?: number;
@@ -72,6 +66,14 @@ export function ActivityFormModal({
 }: ActivityFormModalProps) {
   const [form] = Form.useForm<ActivityFormValues>();
   const isEdit = Boolean(activity?.id);
+  const { clients } = useClientsState();
+  const { loadClients } = useClientsActions();
+
+  useEffect(() => {
+    if (open && !activity && !clients?.length) {
+      loadClients({ pageSize: 500 });
+    }
+  }, [open, activity, clients?.length, loadClients]);
 
   useEffect(() => {
     if (open) {
@@ -83,7 +85,6 @@ export function ActivityFormModal({
           description: activity.description ?? "",
           priority: activity.priority ?? undefined,
           dueDate: toDateTimeLocal(activity.dueDate),
-          assignedToId: activity.assignedToId ?? "",
           relatedToType: activity.relatedToType ?? undefined,
           relatedToId: activity.relatedToId ?? "",
           duration: activity.duration ?? undefined,
@@ -96,8 +97,7 @@ export function ActivityFormModal({
           description: "",
           priority: Priority.Medium,
           dueDate: "",
-          assignedToId: "",
-          relatedToType: presetRelatedToType ?? undefined,
+          relatedToType: RelatedToType.Client,
           relatedToId: presetRelatedToId ?? "",
           duration: undefined,
           location: "",
@@ -117,8 +117,8 @@ export function ActivityFormModal({
       subject: values.subject.trim(),
       description: values.description?.trim() || undefined,
       dueDate,
+      relatedToType: isEdit ? values.relatedToType : RelatedToType.Client,
       relatedToId: values.relatedToId || undefined,
-      assignedToId: values.assignedToId || undefined,
     };
     try {
       if (isEdit && activity && onUpdate) {
@@ -176,22 +176,20 @@ export function ActivityFormModal({
           <Input placeholder="e.g. Microsoft Teams" />
         </Form.Item>
         {!isEdit && (
-          <>
-            <Form.Item name="relatedToType" label="Related to">
+          <Form.Item
+            name="relatedToId"
+            label="Client"
+            rules={[{ required: true, message: "Client is required" }]}
+          >
               <Select
-                allowClear
-                options={RELATED_TO_OPTIONS}
-                placeholder="Client, Opportunity, etc."
+                placeholder="Select client"
+                allowClear={false}
+                showSearch
+                optionFilterProp="label"
+                options={(clients ?? []).map((c) => ({ value: c.id, label: c.name }))}
               />
             </Form.Item>
-            <Form.Item name="relatedToId" label="Related entity ID">
-              <Input placeholder="Paste entity ID (optional)" />
-            </Form.Item>
-          </>
         )}
-        <Form.Item name="assignedToId" label="Assigned to (user ID)">
-          <Input placeholder="Optional user ID" />
-        </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading}>
             {isEdit ? "Save" : "Create"}

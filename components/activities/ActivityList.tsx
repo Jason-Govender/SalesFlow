@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   Button,
@@ -23,6 +24,7 @@ import {
 } from "@ant-design/icons";
 import { useAuthState } from "@/providers/auth-provider";
 import { useActivitiesState, useActivitiesActions } from "@/providers/activities-provider";
+import { useClientsState, useClientsActions } from "@/providers/clients-provider";
 import type { IActivity } from "@/utils/activities-service";
 import {
   ACTIVITY_TYPE_LABELS,
@@ -30,8 +32,8 @@ import {
   PRIORITY_LABELS,
   ActivityType,
   ActivityStatus,
+  RelatedToType,
 } from "@/utils/activities-service";
-import type { RelatedToType } from "@/utils/activities-service";
 import { ActivityFormModal, type ActivityFormValues } from "./ActivityFormModal";
 
 const ROLES_CAN_DELETE_ACTIVITY: string[] = ["Admin", "SalesManager"];
@@ -52,6 +54,9 @@ export function ActivityList({
   const { session } = useAuthState();
   const userRoles = session?.user?.roles ?? [];
   const canDelete = userRoles.some((r) => ROLES_CAN_DELETE_ACTIVITY.includes(r));
+  const router = useRouter();
+  const { clients } = useClientsState();
+  const { loadClients } = useClientsActions();
 
   const { items, isPending, isError, error, actionPending } = useActivitiesState();
   const {
@@ -73,7 +78,25 @@ export function ActivityList({
     if (relatedToType != null && relatedToId) {
       loadList({ mode: "related", relatedToType, relatedToId });
     }
-  }, [relatedToType, relatedToId, loadList]);
+    // Intentionally omit loadList: it is recreated when provider state updates after load,
+    // which would cause this effect to re-run and trigger an infinite reload loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [relatedToType, relatedToId]);
+
+  const showClientColumn = relatedToType == null && relatedToId == null;
+  useEffect(() => {
+    if (showClientColumn && !clients?.length) {
+      loadClients({ pageSize: 500 });
+    }
+  }, [showClientColumn, clients?.length, loadClients]);
+
+  const clientIdToName = (clients ?? []).reduce<Record<string, string>>(
+    (acc, c) => {
+      acc[c.id] = c.name;
+      return acc;
+    },
+    {}
+  );
 
   const handleCreate = () => {
     setEditingActivity(null);
@@ -102,7 +125,6 @@ export function ActivityList({
       description: values.description,
       priority: values.priority,
       dueDate: values.dueDate,
-      assignedToId: values.assignedToId,
       relatedToType: values.relatedToType as RelatedToType | undefined,
       relatedToId: values.relatedToId,
       duration: values.duration,
@@ -117,7 +139,6 @@ export function ActivityList({
       description: values.description,
       priority: values.priority,
       dueDate: values.dueDate,
-      assignedToId: values.assignedToId,
       relatedToType: values.relatedToType as RelatedToType | undefined,
       relatedToId: values.relatedToId,
       duration: values.duration,
@@ -170,6 +191,34 @@ export function ActivityList({
       render: (type: number) =>
         ACTIVITY_TYPE_LABELS[type as ActivityType] ?? type,
     },
+    ...(showClientColumn
+      ? [
+          {
+            title: "Client",
+            key: "client",
+            width: 160,
+            render: (_: unknown, record: IActivity) => {
+              if (
+                record.relatedToType === RelatedToType.Client &&
+                record.relatedToId
+              ) {
+                const name = clientIdToName[record.relatedToId] ?? record.relatedToId;
+                return (
+                  <a
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/clients/${record.relatedToId}`);
+                    }}
+                  >
+                    {name}
+                  </a>
+                );
+              }
+              return "—";
+            },
+          },
+        ]
+      : []),
     {
       title: "Subject",
       dataIndex: "subject",

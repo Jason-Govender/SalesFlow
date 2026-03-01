@@ -34,7 +34,6 @@ export default function ActivitiesPage() {
       description: values.description,
       priority: values.priority,
       dueDate: values.dueDate,
-      assignedToId: values.assignedToId,
       relatedToType: values.relatedToType as RelatedToType | undefined,
       relatedToId: values.relatedToId,
       duration: values.duration,
@@ -49,7 +48,7 @@ export default function ActivitiesPage() {
       <Card
         extra={
           <Button type="primary" onClick={() => setCreateModalOpen(true)}>
-            Create activity
+            + Create Activity
           </Button>
         }
       >

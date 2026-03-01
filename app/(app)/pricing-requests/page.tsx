@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, Tabs, Select, Space } from "antd";
+import { Card, Tabs, Select, Space, Modal } from "antd";
 import { usePricingRequestsState, usePricingRequestsActions } from "@/providers/pricing-requests-provider";
 import { useAuthState } from "@/providers/auth-provider";
 import {
@@ -10,11 +10,15 @@ import {
   PricingRequestStatus,
   Priority,
 } from "@/utils/pricing-requests-service";
+import type { IPricingRequest } from "@/utils/pricing-requests-service";
 import {
   PricingRequestList,
   PricingRequestFormModal,
+  AssignPricingRequestModal,
 } from "@/components/pricing-requests";
 import { useAppPageStyles } from "../pageStyles";
+
+const ROLES_CAN_ASSIGN: string[] = ["Admin", "SalesManager"];
 
 type TabKey = "all" | "pending" | "my";
 
@@ -44,11 +48,17 @@ export default function PricingRequestsPage() {
     setFilters,
     setPagination,
     createPricingRequest,
+    updatePricingRequest,
+    assignPricingRequest,
+    deletePricingRequest,
   } = usePricingRequestsActions();
 
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalRequest, setEditModalRequest] = useState<IPricingRequest | null>(null);
+  const [assignModalRequest, setAssignModalRequest] = useState<IPricingRequest | null>(null);
   const showPending = canSeePending(session?.user?.roles);
+  const canAssign = (session?.user?.roles ?? []).some((r) => ROLES_CAN_ASSIGN.includes(r));
 
   useEffect(() => {
     if (activeTab === "all") {
@@ -79,6 +89,26 @@ export default function PricingRequestsPage() {
     }
   }, [activeTab, loadMyRequests]);
 
+  const handleAssignSuccess = () => {
+    setAssignModalRequest(null);
+    if (activeTab === "all") loadPricingRequests({ ...filters, pageNumber: pagination.pageNumber, pageSize: pagination.pageSize });
+    if (activeTab === "pending") loadPending();
+    if (activeTab === "my") loadMyRequests();
+  };
+
+  const handleDelete = (record: IPricingRequest) => {
+    Modal.confirm({
+      title: "Delete pricing request",
+      content: `Are you sure you want to delete "${record.title}"?`,
+      okText: "Delete",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: async () => {
+        await deletePricingRequest(record.id);
+      },
+    });
+  };
+
   const tabItems = [
     {
       key: "all",
@@ -98,6 +128,10 @@ export default function PricingRequestsPage() {
           }}
           showCreateButton
           onCreateClick={() => setCreateModalOpen(true)}
+          canAssign={canAssign}
+          onAssign={(record) => setAssignModalRequest(record)}
+          onEdit={(record) => setEditModalRequest(record)}
+          onDelete={handleDelete}
         />
       ),
     },
@@ -112,6 +146,10 @@ export default function PricingRequestsPage() {
                 loading={isPending}
                 error={isError ? error : undefined}
                 onRetry={() => loadPending()}
+                canAssign={canAssign}
+                onAssign={(record) => setAssignModalRequest(record)}
+                onEdit={(record) => setEditModalRequest(record)}
+                onDelete={handleDelete}
               />
             ),
           },
@@ -128,6 +166,8 @@ export default function PricingRequestsPage() {
           onRetry={() => loadMyRequests()}
           showCreateButton
           onCreateClick={() => setCreateModalOpen(true)}
+          onEdit={(record) => setEditModalRequest(record)}
+          onDelete={handleDelete}
         />
       ),
     },
@@ -206,6 +246,34 @@ export default function PricingRequestsPage() {
             if (activeTab === "my") loadMyRequests();
           }}
           onSubmit={createPricingRequest}
+          loading={actionPending}
+        />
+      )}
+
+      {editModalRequest && (
+        <PricingRequestFormModal
+          open={Boolean(editModalRequest)}
+          onClose={() => setEditModalRequest(null)}
+          onSuccess={() => {
+            setEditModalRequest(null);
+            if (activeTab === "all") loadPricingRequests({ ...filters, pageNumber: pagination.pageNumber, pageSize: pagination.pageSize });
+            if (activeTab === "pending") loadPending();
+            if (activeTab === "my") loadMyRequests();
+          }}
+          onSubmit={createPricingRequest}
+          request={editModalRequest}
+          onUpdate={updatePricingRequest}
+          loading={actionPending}
+        />
+      )}
+
+      {assignModalRequest && (
+        <AssignPricingRequestModal
+          open={Boolean(assignModalRequest)}
+          onClose={() => setAssignModalRequest(null)}
+          onSuccess={handleAssignSuccess}
+          pricingRequestId={assignModalRequest.id}
+          onAssign={assignPricingRequest}
           loading={actionPending}
         />
       )}

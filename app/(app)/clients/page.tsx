@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Table, Button, Select, Space, Alert, Spin, Input, Tag } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import { useClientsState, useClientsActions } from "@/providers/clients-provider";
 import {
   CLIENT_TYPE_LABELS,
   ClientType,
 } from "@/utils/clients-service";
 import { useAppPageStyles } from "../pageStyles";
+import { CreateClientModal } from "@/components/clients/CreateClientModal";
 
 const CLIENT_TYPE_OPTIONS = [
   { value: undefined, label: "All types" },
@@ -33,12 +35,15 @@ export default function ClientsPage() {
     isPending,
     isError,
     error,
+    actionPending,
   } = useClientsState();
   const {
     loadClients,
     setFilters,
     setPagination,
   } = useClientsActions();
+
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   useEffect(() => {
     loadClients({
@@ -150,8 +155,8 @@ export default function ClientsPage() {
               options={IS_ACTIVE_OPTIONS}
               style={{ minWidth: 100 }}
             />
-            <Button type="primary" onClick={() => router.push("/clients/new")}>
-              Add client
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalOpen(true)}>
+              Create Client
             </Button>
           </Space>
 
@@ -176,6 +181,18 @@ export default function ClientsPage() {
           />
         </Space>
       </Card>
+      <CreateClientModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSuccess={() => {
+          loadClients({
+            ...filters,
+            pageNumber: pagination.pageNumber,
+            pageSize: pagination.pageSize,
+          });
+        }}
+        loading={actionPending}
+      />
     </div>
   );
 }

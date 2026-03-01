@@ -14,6 +14,10 @@ export interface IOpportunitiesStateContext {
   pageNumber: number;
   pageSize: number;
   totalCount: number;
+  /** Last stage filter used for list; refetches use this so the list stays consistent. */
+  stageFilter?: number;
+  /** Last search term used for list; refetches use this so the list stays consistent. */
+  searchTerm?: string;
   isPending: boolean;
   isError: boolean;
   error?: string;
@@ -28,6 +32,8 @@ export const INITIAL_OPPORTUNITIES_STATE: IOpportunitiesStateContext = {
   pageNumber: 1,
   pageSize: 10,
   totalCount: 0,
+  stageFilter: undefined,
+  searchTerm: undefined,
   isPending: false,
   isError: false,
   error: undefined,
@@ -37,6 +43,9 @@ export const INITIAL_OPPORTUNITIES_STATE: IOpportunitiesStateContext = {
 export interface IOpportunitiesActionContext {
   loadOpportunitiesByClient: (
     clientId: string,
+    params?: { stage?: number; searchTerm?: string; pageNumber?: number; pageSize?: number }
+  ) => Promise<void>;
+  loadOpportunities: (
     params?: { stage?: number; searchTerm?: string; pageNumber?: number; pageSize?: number }
   ) => Promise<void>;
   clearOpportunities: () => void;

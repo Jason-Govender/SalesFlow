@@ -102,7 +102,46 @@ const isAxiosError = (error: unknown): error is AxiosError => {
   return "isAxiosError" in error;
 };
 
+export interface IListContractsParams {
+  clientId?: string;
+  status?: number;
+  pageNumber?: number;
+  pageSize?: number;
+}
+
 export const contractsService = {
+  async listContracts(params?: IListContractsParams): Promise<IContract[]> {
+    try {
+      const searchParams = new URLSearchParams();
+      if (params?.clientId) searchParams.set("clientId", params.clientId);
+      if (params?.status != null) searchParams.set("status", String(params.status));
+      if (params?.pageNumber != null)
+        searchParams.set("pageNumber", String(params.pageNumber));
+      if (params?.pageSize != null)
+        searchParams.set("pageSize", String(params.pageSize));
+      const query = searchParams.toString();
+      const url = query ? `/api/contracts?${query}` : "/api/contracts";
+      const response = await axiosInstance.get<IContract[]>(url);
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      if (
+        typeof data === "object" &&
+        data !== null &&
+        "items" in (data as object) &&
+        Array.isArray((data as { items: IContract[] }).items)
+      ) {
+        return (data as { items: IContract[] }).items;
+      }
+      return [];
+    } catch (error: unknown) {
+      const message = extractErrorMessage(
+        error,
+        "Failed to load contracts."
+      );
+      throw new Error(message);
+    }
+  },
+
   async getContractsByClient(clientId: string): Promise<IContract[]> {
     try {
       const response = await axiosInstance.get<IContract[]>(

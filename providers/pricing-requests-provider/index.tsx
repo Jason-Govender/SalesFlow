@@ -77,6 +77,30 @@ export const PricingRequestsProvider = ({
     [state.filters, state.pagination.pageNumber, state.pagination.pageSize]
   );
 
+  const loadPricingRequestsByOpportunity = useCallback(
+    async (
+      opportunityId: string,
+      params?: { pageNumber?: number; pageSize?: number }
+    ): Promise<void> => {
+      dispatch(loadPricingRequestsPending());
+      try {
+        const response = await pricingRequestsService.getPricingRequests({
+          opportunityId,
+          pageNumber: params?.pageNumber ?? 1,
+          pageSize: params?.pageSize ?? 10,
+        });
+        dispatch(loadPricingRequestsSuccess(response));
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to load pricing requests.";
+        dispatch(loadPricingRequestsError(message));
+      }
+    },
+    []
+  );
+
   const loadPending = useCallback(async (): Promise<void> => {
     dispatch(loadPendingPending());
     try {
@@ -248,6 +272,41 @@ export const PricingRequestsProvider = ({
     ]
   );
 
+  const deletePricingRequest = useCallback(
+    async (id: string) => {
+      dispatch(actionPendingAction());
+      try {
+        await pricingRequestsService.delete(id);
+        dispatch(actionSuccessAction());
+        if (state.pricingRequests) {
+          const response = await pricingRequestsService.getPricingRequests({
+            ...state.filters,
+            pageNumber: state.pagination.pageNumber,
+            pageSize: state.pagination.pageSize,
+          });
+          dispatch(loadPricingRequestsSuccess(response));
+        }
+        await loadPending();
+        await loadMyRequests();
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to delete pricing request.";
+        dispatch(actionErrorAction(message));
+        throw error;
+      }
+    },
+    [
+      state.pricingRequests,
+      state.filters,
+      state.pagination.pageNumber,
+      state.pagination.pageSize,
+      loadPending,
+      loadMyRequests,
+    ]
+  );
+
   const clearSelectedPricingRequest = useCallback(() => {
     dispatch(clearSelectedPricingRequestAction());
   }, []);
@@ -257,6 +316,7 @@ export const PricingRequestsProvider = ({
   const actionValue = useMemo(
     () => ({
       loadPricingRequests,
+      loadPricingRequestsByOpportunity,
       loadPending,
       loadMyRequests,
       loadPricingRequest,
@@ -266,10 +326,12 @@ export const PricingRequestsProvider = ({
       updatePricingRequest,
       assignPricingRequest,
       completePricingRequest,
+      deletePricingRequest,
       clearSelectedPricingRequest,
     }),
     [
       loadPricingRequests,
+      loadPricingRequestsByOpportunity,
       loadPending,
       loadMyRequests,
       loadPricingRequest,
@@ -279,6 +341,7 @@ export const PricingRequestsProvider = ({
       updatePricingRequest,
       assignPricingRequest,
       completePricingRequest,
+      deletePricingRequest,
       clearSelectedPricingRequest,
     ]
   );

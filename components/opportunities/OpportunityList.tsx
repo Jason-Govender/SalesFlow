@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Table,
@@ -12,6 +12,7 @@ import {
   Dropdown,
   Modal,
   Select,
+  Input,
 } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -24,8 +25,10 @@ import {
   EyeOutlined,
 } from "@ant-design/icons";
 import { useAuthState } from "@/providers/auth-provider";
+import { useDashboardActions } from "@/providers/dashboard-provider";
 import { useOpportunitiesState, useOpportunitiesActions } from "@/providers/opportunities-provider";
 import { useContactsState, useContactsActions } from "@/providers/contacts-provider";
+import { useClientsState, useClientsActions } from "@/providers/clients-provider";
 import type { IOpportunity } from "@/utils/opportunities-service";
 import {
   OPPORTUNITY_STAGE_LABELS,
@@ -39,16 +42,31 @@ import { AssignOpportunityModal } from "./AssignOpportunityModal";
 const ROLES_CAN_ASSIGN_OR_DELETE_OPPORTUNITY: string[] = ["Admin", "SalesManager"];
 
 function formatCurrency(value: number, currency = "ZAR"): string {
+  // #region agent log
+  fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ae026c" },
+    body: JSON.stringify({
+      sessionId: "ae026c",
+      location: "OpportunityList.tsx:formatCurrency",
+      message: "formatCurrency called",
+      data: { currency, value, hypothesisId: "H3" },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+  const isoCurrency = currency === "R" ? "ZAR" : currency;
   return new Intl.NumberFormat("en-ZA", {
     style: "currency",
-    currency,
+    currency: isoCurrency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
 }
 
 interface OpportunityListProps {
-  clientId: string;
+  /** When set, list is scoped to this client. When undefined, lists all opportunities with a Client column. */
+  clientId?: string;
 }
 
 export function OpportunityList({ clientId }: OpportunityListProps) {
@@ -71,6 +89,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   } = useOpportunitiesState();
   const {
     loadOpportunitiesByClient,
+    loadOpportunities,
     clearOpportunities,
     createOpportunity,
     updateOpportunity,
@@ -79,8 +98,19 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
     deleteOpportunity,
   } = useOpportunitiesActions();
 
+  const { loadDashboard } = useDashboardActions();
   const { contacts } = useContactsState();
   const { loadContactsByClient } = useContactsActions();
+  const { clients } = useClientsState();
+  const { loadClients } = useClientsActions();
+
+  const clientIdToName = (clients ?? []).reduce<Record<string, string>>(
+    (acc, c) => {
+      acc[c.id] = c.name;
+      return acc;
+    },
+    {}
+  );
 
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingOpportunity, setEditingOpportunity] = useState<IOpportunity | null>(null);
@@ -89,26 +119,76 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignModalOpportunity, setAssignModalOpportunity] = useState<IOpportunity | null>(null);
   const [stageFilter, setStageFilter] = useState<number | undefined>(undefined);
+  const [clientNameFilter, setClientNameFilter] = useState("");
+  const [titleFilter, setTitleFilter] = useState("");
+
+  const searchTermRaw = useMemo(
+    () => titleFilter.trim() || undefined,
+    [titleFilter]
+  );
+
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string | undefined>(searchTermRaw);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearchTerm(searchTermRaw), 300);
+    return () => clearTimeout(t);
+  }, [searchTermRaw]);
+
+  const searchTerm = debouncedSearchTerm;
+
+  const filteredByClientName = useMemo(() => {
+    if (clientId != null || !clientNameFilter.trim() || !opportunities?.length) {
+      return opportunities ?? [];
+    }
+    const q = clientNameFilter.trim().toLowerCase();
+    return opportunities.filter((record) => {
+      const name = clientIdToName[record.clientId];
+      return name != null && name.toLowerCase().includes(q);
+    });
+  }, [clientId, clientNameFilter, opportunities, clients]);
 
   useEffect(() => {
-    if (clientId) {
+    if (clientId != null) {
       loadOpportunitiesByClient(clientId, {
         pageNumber: 1,
         pageSize: 10,
         stage: stageFilter,
+        searchTerm,
+      });
+    } else {
+      loadOpportunities({
+        pageNumber: 1,
+        pageSize: 10,
+        stage: stageFilter,
+        searchTerm,
       });
     }
     return () => {
       clearOpportunities();
     };
-  }, [clientId, stageFilter]);
+  }, [clientId, stageFilter, searchTerm, loadOpportunitiesByClient, loadOpportunities, clearOpportunities]);
 
-  const handlePageChange = (page: number, pageSize?: number) => {
-    loadOpportunitiesByClient(clientId, {
-      pageNumber: page,
-      pageSize: pageSize ?? 10,
-      stage: stageFilter,
-    });
+  useEffect(() => {
+    if (clientId == null && !clients?.length) {
+      loadClients({ pageSize: 500 });
+    }
+  }, [clientId, clients?.length, loadClients]);
+
+  const handlePageChange = (page: number, newPageSize?: number) => {
+    if (clientId != null) {
+      loadOpportunitiesByClient(clientId, {
+        pageNumber: page,
+        pageSize: newPageSize ?? pageSize,
+        stage: stageFilter,
+        searchTerm,
+      });
+    } else {
+      loadOpportunities({
+        pageNumber: page,
+        pageSize: newPageSize ?? pageSize,
+        stage: stageFilter,
+        searchTerm,
+      });
+    }
   };
 
   const handleAdd = () => {
@@ -124,13 +204,19 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   const handleFormSuccess = () => {
     setFormModalOpen(false);
     setEditingOpportunity(null);
-    loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+    if (clientId != null) {
+      loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm });
+    } else {
+      loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm });
+    }
   };
 
   const handleCreateSubmit = async (values: OpportunityFormValues) => {
+    const effectiveClientId = clientId ?? values.clientId;
+    if (!effectiveClientId) return;
     await createOpportunity({
       ...values,
-      clientId,
+      clientId: effectiveClientId,
     });
   };
 
@@ -161,13 +247,22 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   const handleAssignSuccess = () => {
     setAssignModalOpen(false);
     setAssignModalOpportunity(null);
-    loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+    if (clientId != null) {
+      loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm });
+    } else {
+      loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm });
+    }
   };
 
   const handleStageSuccess = () => {
     setStageModalOpen(false);
     setStageModalOpportunity(null);
-    loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+    if (clientId != null) {
+      loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm });
+    } else {
+      loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm });
+    }
+    loadDashboard();
   };
 
   const handleDelete = (record: IOpportunity) => {
@@ -179,10 +274,16 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
       cancelText: "Cancel",
       onOk: async () => {
         await deleteOpportunity(record.id);
-        loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+        if (clientId != null) {
+          await loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm });
+        } else {
+          await loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm });
+        }
       },
     });
   };
+
+  const effectiveClientId = (record: IOpportunity) => clientId ?? record.clientId;
 
   const stageOptions = [
     { value: undefined, label: "All stages" },
@@ -193,6 +294,28 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   ];
 
   const columns = [
+    ...(clientId == null
+      ? [
+          {
+            title: "Client",
+            dataIndex: "clientId",
+            key: "clientId",
+            render: (id: string) =>
+              id ? (
+                <a
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/clients/${id}`);
+                  }}
+                >
+                  {clientIdToName[id] ?? id}
+                </a>
+              ) : (
+                "—"
+              ),
+          },
+        ]
+      : []),
     {
       title: "Title",
       dataIndex: "title",
@@ -201,7 +324,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
         <a
           onClick={(e) => {
             e.stopPropagation();
-            router.push(`/clients/${clientId}/opportunities/${record.id}`);
+            router.push(`/clients/${effectiveClientId(record)}/opportunities/${record.id}`);
           }}
         >
           {val || "—"}
@@ -247,7 +370,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
             key: "view",
             icon: <EyeOutlined />,
             label: "View",
-            onClick: () => router.push(`/clients/${clientId}/opportunities/${record.id}`),
+            onClick: () => router.push(`/clients/${effectiveClientId(record)}/opportunities/${record.id}`),
           },
           {
             key: "edit",
@@ -316,7 +439,9 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
               type="link"
               size="small"
               onClick={() =>
-                loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter })
+                clientId != null
+                  ? loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm })
+                  : loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm })
               }
             >
               Retry
@@ -325,21 +450,39 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
         />
       )}
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <Select
-          value={stageFilter}
-          onChange={setStageFilter}
-          options={stageOptions}
-          style={{ minWidth: 140 }}
-          placeholder="Filter by stage"
-          allowClear
-        />
+        <Space wrap>
+          <Select
+            value={stageFilter}
+            onChange={setStageFilter}
+            options={stageOptions}
+            style={{ minWidth: 140 }}
+            placeholder="Filter by stage"
+            allowClear
+          />
+          {clientId == null && (
+            <Input
+              allowClear
+              placeholder="Filter by client name"
+              value={clientNameFilter}
+              onChange={(e) => setClientNameFilter(e.target.value)}
+              style={{ width: 200 }}
+            />
+          )}
+          <Input
+            allowClear
+            placeholder="Filter by opportunity name"
+            value={titleFilter}
+            onChange={(e) => setTitleFilter(e.target.value)}
+            style={{ width: 200 }}
+          />
+        </Space>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-          Add opportunity
+          {clientId != null ? "Add opportunity" : "Create opportunity"}
         </Button>
       </div>
       <Table
         loading={isPending}
-        dataSource={opportunities ?? []}
+        dataSource={filteredByClientName}
         rowKey="id"
         columns={columns}
         pagination={{
@@ -358,9 +501,10 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
           setEditingOpportunity(null);
         }}
         onSuccess={handleFormSuccess}
-        clientId={clientId}
+        clientId={clientId ?? editingOpportunity?.clientId ?? ""}
         opportunity={editingOpportunity}
         contacts={contacts ?? []}
+        clients={clientId == null ? (clients ?? []).map((c) => ({ id: c.id, name: c.name })) : undefined}
         onSubmit={handleCreateSubmit}
         onUpdate={handleUpdateSubmit}
         loading={actionPending}

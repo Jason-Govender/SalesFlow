@@ -12,6 +12,19 @@ import {
 import type { IProposal } from "@/utils/proposals-service";
 
 function formatCurrency(value: number, currency: string = "ZAR"): string {
+  // #region agent log
+  fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ae026c" },
+    body: JSON.stringify({
+      sessionId: "ae026c",
+      location: "ProposalList.tsx:formatCurrency",
+      message: "formatCurrency called",
+      data: { currency, value, hypothesisId: "H1" },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
   return new Intl.NumberFormat("en-ZA", {
     style: "currency",
     currency,
@@ -34,7 +47,7 @@ export function ProposalList({
   clientId,
   opportunityId,
   showCreateButton = false,
-  createHref = "/proposals/new",
+  createHref = "/opportunities/proposals/new",
 }: ProposalListProps) {
   const router = useRouter();
   const {
@@ -71,7 +84,7 @@ export function ProposalList({
         <a
           onClick={(e) => {
             e.stopPropagation();
-            router.push(`/proposals/${record.id}`);
+            router.push(`/opportunities/proposals/${record.id}`);
           }}
         >
           {val || "—"}
@@ -221,7 +234,7 @@ export function ProposalList({
         columns={columns}
         pagination={currentPagination}
         onRow={(record) => ({
-          onClick: () => router.push(`/proposals/${record.id}`),
+          onClick: () => router.push(`/opportunities/proposals/${record.id}`),
           style: { cursor: "pointer" },
         })}
       />

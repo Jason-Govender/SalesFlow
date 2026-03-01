@@ -9,6 +9,19 @@ import {
 import { ProposalStatus } from "@/utils/proposals-service";
 
 function formatCurrency(value: number, currency: string = "ZAR"): string {
+  // #region agent log
+  fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ae026c" },
+    body: JSON.stringify({
+      sessionId: "ae026c",
+      location: "ProposalLineItemTable.tsx:formatCurrency",
+      message: "formatCurrency called",
+      data: { currency, value, hypothesisId: "H2" },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
   return new Intl.NumberFormat("en-ZA", {
     style: "currency",
     currency,

@@ -3,8 +3,10 @@
 import { useEffect } from "react";
 import { Modal, Form, Input, InputNumber, Select, Button, Checkbox } from "antd";
 import type { IContract } from "@/utils/contracts-service";
+import { useClientsState, useClientsActions } from "@/providers/clients-provider";
 
 export interface ContractFormValues {
+  clientId?: string;
   title: string;
   contractValue?: number;
   currency: string;
@@ -22,7 +24,7 @@ interface ContractFormModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  clientId: string;
+  clientId?: string;
   contract?: IContract | null;
   onSubmit: (values: ContractFormValues) => Promise<unknown>;
   onUpdate?: (id: string, values: ContractFormValues) => Promise<unknown>;
@@ -47,6 +49,15 @@ export function ContractFormModal({
 }: ContractFormModalProps) {
   const [form] = Form.useForm<ContractFormValues>();
   const isEdit = Boolean(contract?.id);
+  const showClientSelect = open && !clientId && !isEdit;
+  const { clients } = useClientsState();
+  const { loadClients } = useClientsActions();
+
+  useEffect(() => {
+    if (showClientSelect) {
+      loadClients({ pageNumber: 1, pageSize: 100 });
+    }
+  }, [showClientSelect, loadClients]);
 
   useEffect(() => {
     if (open) {
@@ -67,6 +78,7 @@ export function ContractFormModal({
         });
       } else {
         form.setFieldsValue({
+          clientId: undefined,
           title: "",
           contractValue: undefined,
           currency: "ZAR",
@@ -115,6 +127,23 @@ export function ContractFormModal({
         layout="vertical"
         onFinish={handleFinish}
       >
+        {showClientSelect && (
+          <Form.Item
+            name="clientId"
+            label="Client"
+            rules={[{ required: true, message: "Client is required" }]}
+          >
+            <Select
+              placeholder="Select client"
+              showSearch
+              optionFilterProp="label"
+              options={(clients ?? []).map((c) => ({
+                value: c.id,
+                label: c.name ?? c.id,
+              }))}
+            />
+          </Form.Item>
+        )}
         <Form.Item
           name="title"
           label="Title"

@@ -19,7 +19,9 @@ import {
   DeleteOutlined,
   CheckOutlined,
   StopOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
+import Link from "next/link";
 import { useAuthState } from "@/providers/auth-provider";
 import { useContractsState, useContractsActions } from "@/providers/contracts-provider";
 import type { IContract } from "@/utils/contracts-service";
@@ -29,24 +31,32 @@ import {
 } from "@/utils/contracts-service";
 import type { ContractFormValues } from "./ContractFormModal";
 import { ContractFormModal } from "./ContractFormModal";
+import { ContractRenewalModal } from "./ContractRenewalModal";
 
 const ROLES_CAN_ACTIVATE_OR_CANCEL: string[] = ["Admin", "SalesManager"];
 const ROLES_CAN_DELETE: string[] = ["Admin"];
 
 function formatCurrency(value: number, currency = "ZAR"): string {
+  const isoCurrency =
+    typeof currency === "string" && currency.length === 3 && /^[A-Z]{3}$/i.test(currency)
+      ? currency.toUpperCase()
+      : "ZAR";
   return new Intl.NumberFormat("en-ZA", {
     style: "currency",
-    currency,
+    currency: isoCurrency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
 }
 
 interface ContractListProps {
-  clientId: string;
+  /** When undefined, list all contracts (all mode) with a Client column. */
+  clientId?: string;
+  /** When set (and clientId is set), only contracts linked to this opportunity are shown. */
+  opportunityId?: string;
 }
 
-export function ContractList({ clientId }: ContractListProps) {
+export function ContractList({ clientId, opportunityId }: ContractListProps) {
   const { session } = useAuthState();
   const userRoles = session?.user?.roles ?? [];
   const canActivateOrCancel = userRoles.some((r) =>
@@ -63,6 +73,7 @@ export function ContractList({ clientId }: ContractListProps) {
   } = useContractsState();
   const {
     loadContractsByClient,
+    loadContracts,
     clearContracts,
     createContract,
     updateContract,
@@ -73,15 +84,23 @@ export function ContractList({ clientId }: ContractListProps) {
 
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<IContract | null>(null);
+  const [renewalModalContract, setRenewalModalContract] = useState<IContract | null>(null);
 
   useEffect(() => {
     if (clientId) {
       loadContractsByClient(clientId);
+    } else {
+      loadContracts();
     }
     return () => {
       clearContracts();
     };
-  }, [clientId, loadContractsByClient, clearContracts]);
+  }, [clientId, loadContractsByClient, loadContracts, clearContracts]);
+
+  const displayContracts = (contracts ?? []).filter(
+    (c) =>
+      !clientId || !opportunityId || c.opportunityId === opportunityId
+  );
 
   const handleAdd = () => {
     setEditingContract(null);
@@ -97,10 +116,13 @@ export function ContractList({ clientId }: ContractListProps) {
     setFormModalOpen(false);
     setEditingContract(null);
     if (clientId) loadContractsByClient(clientId);
+    else loadContracts();
   };
 
   const handleCreateSubmit = async (values: ContractFormValues) => {
-    await createContract(clientId, {
+    const effectiveClientId = clientId ?? values.clientId;
+    if (!effectiveClientId) return;
+    await createContract(effectiveClientId, {
       title: values.title,
       contractValue: values.contractValue ?? 0,
       currency: values.currency,
@@ -138,6 +160,7 @@ export function ContractList({ clientId }: ContractListProps) {
       onOk: async () => {
         await activateContract(record.id);
         if (clientId) loadContractsByClient(clientId);
+        else loadContracts();
       },
     });
   };
@@ -152,6 +175,7 @@ export function ContractList({ clientId }: ContractListProps) {
       onOk: async () => {
         await cancelContract(record.id);
         if (clientId) loadContractsByClient(clientId);
+        else loadContracts();
       },
     });
   };
@@ -166,6 +190,7 @@ export function ContractList({ clientId }: ContractListProps) {
       onOk: async () => {
         await deleteContract(record.id);
         if (clientId) loadContractsByClient(clientId);
+        else loadContracts();
       },
     });
   };
@@ -188,6 +213,21 @@ export function ContractList({ clientId }: ContractListProps) {
   };
 
   const columns = [
+    ...(clientId === undefined
+      ? [
+          {
+            title: "Client",
+            dataIndex: "clientId",
+            key: "clientId",
+            render: (cid: string) =>
+              cid ? (
+                <Link href={`/clients/${cid}`}>View client</Link>
+              ) : (
+                "—"
+              ),
+          },
+        ]
+      : []),
     {
       title: "Title",
       dataIndex: "title",
@@ -236,6 +276,16 @@ export function ContractList({ clientId }: ContractListProps) {
             label: "Edit",
             onClick: () => handleEdit(record),
           },
+          ...(status === ContractStatus.Active || status === ContractStatus.Expired
+            ? [
+                {
+                  key: "renew",
+                  icon: <ReloadOutlined />,
+                  label: "Renew",
+                  onClick: () => setRenewalModalContract(record),
+                },
+              ]
+            : []),
           ...(canActivateOrCancel && status === ContractStatus.Draft
             ? [
                 {
@@ -306,7 +356,11 @@ export function ContractList({ clientId }: ContractListProps) {
             <Button
               type="link"
               size="small"
-              onClick={() => clientId && loadContractsByClient(clientId)}
+              onClick={() =>
+                clientId
+                  ? loadContractsByClient(clientId)
+                  : loadContracts()
+              }
             >
               Retry
             </Button>
@@ -320,7 +374,7 @@ export function ContractList({ clientId }: ContractListProps) {
       </div>
       <Table
         loading={isPending}
-        dataSource={contracts ?? []}
+        dataSource={displayContracts}
         rowKey="id"
         columns={columns}
         pagination={false}
@@ -332,11 +386,21 @@ export function ContractList({ clientId }: ContractListProps) {
           setEditingContract(null);
         }}
         onSuccess={handleFormSuccess}
-        clientId={clientId}
+        clientId={editingContract?.clientId ?? clientId ?? ""}
         contract={editingContract}
         onSubmit={handleCreateSubmit}
         onUpdate={handleUpdateSubmit}
         loading={actionPending}
+      />
+      <ContractRenewalModal
+        open={!!renewalModalContract}
+        onClose={() => setRenewalModalContract(null)}
+        onSuccess={() => {
+          setRenewalModalContract(null);
+          if (clientId) loadContractsByClient(clientId);
+          else loadContracts();
+        }}
+        contract={renewalModalContract}
       />
     </Space>
   );

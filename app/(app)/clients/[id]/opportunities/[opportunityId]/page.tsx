@@ -14,7 +14,7 @@ export default function OpportunityDetailPage() {
 
   const { selectedClient } = useClientsState();
   const { loadClient } = useClientsActions();
-  const { loadOpportunity, loadStageHistory, clearSelectedOpportunity } =
+  const { loadOpportunity, clearSelectedOpportunity } =
     useOpportunitiesActions();
   const { loadContactsByClient } = useContactsActions();
 
@@ -35,9 +35,8 @@ export default function OpportunityDetailPage() {
   useEffect(() => {
     if (opportunityId) {
       loadOpportunity(opportunityId);
-      loadStageHistory(opportunityId);
     }
-  }, [opportunityId, loadOpportunity, loadStageHistory]);
+  }, [opportunityId, loadOpportunity]);
 
   if (!clientId || !opportunityId) {
     return null;

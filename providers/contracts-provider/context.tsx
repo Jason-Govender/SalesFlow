@@ -23,8 +23,16 @@ export const INITIAL_CONTRACTS_STATE: IContractsStateContext = {
   actionPending: false,
 };
 
+export interface IListContractsParams {
+  clientId?: string;
+  status?: number;
+  pageNumber?: number;
+  pageSize?: number;
+}
+
 export interface IContractsActionContext {
   loadContractsByClient: (clientId: string) => Promise<void>;
+  loadContracts: (params?: IListContractsParams) => Promise<void>;
   clearContracts: () => void;
   createContract: (
     clientId: string,

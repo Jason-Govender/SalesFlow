@@ -1,8 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { Table, Button, Space, Alert, Spin, Tag, Dropdown } from "antd";
+import type { MenuProps } from "antd";
+import {
+  UserAddOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  MoreOutlined,
+} from "@ant-design/icons";
 import Link from "next/link";
-import { Table, Button, Space, Alert, Spin, Tag } from "antd";
 import {
   PRICING_REQUEST_STATUS_LABELS,
   PRIORITY_LABELS,
@@ -26,6 +32,10 @@ export interface PricingRequestListProps {
   pagination?: IPricingRequestsPaginationConfig;
   showCreateButton?: boolean;
   onCreateClick?: () => void;
+  canAssign?: boolean;
+  onAssign?: (record: IPricingRequest) => void;
+  onEdit?: (record: IPricingRequest) => void;
+  onDelete?: (record: IPricingRequest) => void;
 }
 
 export function PricingRequestList({
@@ -36,24 +46,17 @@ export function PricingRequestList({
   pagination,
   showCreateButton = false,
   onCreateClick,
+  canAssign = false,
+  onAssign,
+  onEdit,
+  onDelete,
 }: PricingRequestListProps) {
-  const router = useRouter();
-
   const columns = [
     {
       title: "Title",
       dataIndex: "title",
       key: "title",
-      render: (val: string, record: IPricingRequest) => (
-        <a
-          onClick={(e) => {
-            e.stopPropagation();
-            router.push(`/pricing-requests/${record.id}`);
-          }}
-        >
-          {val || "—"}
-        </a>
-      ),
+      render: (val: string) => val || "—",
     },
     {
       title: "Status",
@@ -114,10 +117,55 @@ export function PricingRequestList({
         ),
     },
     {
-      title: "Assigned to",
-      dataIndex: "assignedToId",
-      key: "assignedToId",
-      render: (val: string) => (val ? "Yes" : "—"),
+      title: "Actions",
+      key: "actions",
+      width: 80,
+      render: (_: unknown, record: IPricingRequest) => {
+        const items: MenuProps["items"] = [
+          ...(canAssign && onAssign
+            ? [
+                {
+                  key: "assign",
+                  icon: <UserAddOutlined />,
+                  label: "Assign to sales rep",
+                  onClick: () => onAssign(record),
+                },
+              ]
+            : []),
+          ...(onEdit
+            ? [
+                {
+                  key: "edit",
+                  icon: <EditOutlined />,
+                  label: "Edit",
+                  onClick: () => onEdit(record),
+                },
+              ]
+            : []),
+          ...(onDelete
+            ? [
+                {
+                  key: "delete",
+                  icon: <DeleteOutlined />,
+                  label: "Delete",
+                  danger: true,
+                  onClick: () => onDelete(record),
+                },
+              ]
+            : []),
+        ];
+        if (items.length === 0) return null;
+        return (
+          <Dropdown menu={{ items }} trigger={["click"]}>
+            <Button
+              type="text"
+              size="small"
+              icon={<MoreOutlined />}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Dropdown>
+        );
+      },
     },
   ];
 
@@ -176,10 +224,6 @@ export function PricingRequestList({
         rowKey="id"
         columns={columns}
         pagination={tablePagination}
-        onRow={(record) => ({
-          onClick: () => router.push(`/pricing-requests/${record.id}`),
-          style: { cursor: "pointer" },
-        })}
       />
     </Space>
   );
