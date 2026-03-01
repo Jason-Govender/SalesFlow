@@ -14,6 +14,7 @@ import { ContractList } from "@/components/contracts/ContractList";
 import { OpportunityList } from "@/components/opportunities/OpportunityList";
 import { ProposalList } from "@/components/proposals";
 import { ActivityList } from "@/components/activities/ActivityList";
+import { DocumentList } from "@/components/documents/DocumentList";
 import { RelatedToType } from "@/utils/activities-service";
 import { useAppPageStyles } from "../../pageStyles";
 
@@ -272,7 +273,7 @@ export default function ClientDetailPage() {
               { key: "proposals", label: "Proposals", children: id ? <ProposalList clientId={id} showCreateButton createHref={`/proposals/new?clientId=${id}`} /> : null },
               { key: "contracts", label: "Contracts", children: id ? <ContractList clientId={id} /> : null },
               { key: "activities", label: "Activities", children: id ? <ActivityList relatedToType={RelatedToType.Client} relatedToId={id} /> : null },
-              { key: "documents", label: "Documents", children: <Text type="secondary">Coming soon</Text> },
+              { key: "documents", label: "Documents", children: id ? <DocumentList clientId={id} /> : null },
               { key: "notes", label: "Notes", children: <Text type="secondary">Coming soon</Text> },
             ]}
           />

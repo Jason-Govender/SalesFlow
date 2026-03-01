@@ -12,6 +12,7 @@ import { OpportunitiesProvider } from "@/providers/opportunities-provider";
 import { ProposalsProvider } from "@/providers/proposals-provider";
 import { PricingRequestsProvider } from "@/providers/pricing-requests-provider";
 import { ActivitiesProvider } from "@/providers/activities-provider";
+import { DocumentsProvider } from "@/providers/documents-provider";
 import { AppShell } from "@/components/app-shell";
 import { hasAccess } from "@/utils/route-roles";
 import { useAppLayoutStyles } from "./layoutStyles";
@@ -82,7 +83,9 @@ export default function AppLayout({
                 <ProposalsProvider>
                   <PricingRequestsProvider>
                     <ActivitiesProvider>
-                      <AppShell>{children}</AppShell>
+                      <DocumentsProvider>
+                        <AppShell>{children}</AppShell>
+                      </DocumentsProvider>
                     </ActivitiesProvider>
                   </PricingRequestsProvider>
                 </ProposalsProvider>
