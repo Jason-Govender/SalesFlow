@@ -11,12 +11,6 @@ import {
   Modal,
 } from "antd";
 import type { MenuProps } from "antd";
-/** Parameter type for menu item onClick (Ant Design Dropdown/Menu) */
-type MenuItemClickInfo = NonNullable<
-  NonNullable<NonNullable<MenuProps["items"]>[number]>["onClick"]
-> extends (info: infer I) => void
-  ? I
-  : never;
 import {
   PlusOutlined,
   MoreOutlined,
@@ -176,8 +170,8 @@ export function DocumentList({ clientId, opportunityId }: DocumentListProps) {
             key: "download",
             icon: <DownloadOutlined />,
             label: "Download",
-            onClick: (e: MenuItemClickInfo) => {
-              e.domEvent?.stopPropagation?.();
+            onClick: (e: unknown) => {
+              (e as { domEvent?: { stopPropagation?: () => void } }).domEvent?.stopPropagation?.();
               handleDownload(record);
             },
             disabled: downloadingId === record.id,
@@ -189,8 +183,8 @@ export function DocumentList({ clientId, opportunityId }: DocumentListProps) {
                   icon: <DeleteOutlined />,
                   label: "Delete",
                   danger: true,
-                  onClick: (e: MenuItemClickInfo) => {
-                    e.domEvent?.stopPropagation?.();
+                  onClick: (e: unknown) => {
+                    (e as { domEvent?: { stopPropagation?: () => void } }).domEvent?.stopPropagation?.();
                     handleDelete(record);
                   },
                 },
