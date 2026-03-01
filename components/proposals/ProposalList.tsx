@@ -90,7 +90,7 @@ export function ProposalList({
             : status === ProposalStatus.Rejected
               ? "red"
               : status === ProposalStatus.Submitted
-                ? "blue"
+                ? "orange"
                 : "default";
         return <Tag color={color}>{label}</Tag>;
       },

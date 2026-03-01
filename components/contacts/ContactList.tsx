@@ -123,7 +123,7 @@ export function ContactList({ clientId }: ContactListProps) {
       key: "primary",
       render: (_: unknown, record: IContact) =>
         record.isPrimaryContact ? (
-          <Tag color="blue">Primary</Tag>
+          <Tag color="orange">Primary</Tag>
         ) : null,
     },
     {

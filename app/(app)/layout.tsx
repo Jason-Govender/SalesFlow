@@ -73,6 +73,9 @@ export default function AppLayout({
       theme={{
         token: {
           colorPrimary: ORANGE_PRIMARY,
+          colorLink: ORANGE_PRIMARY,
+          colorLinkHover: ORANGE_PRIMARY,
+          colorLinkActive: ORANGE_PRIMARY,
         },
       }}
     >

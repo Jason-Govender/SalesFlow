@@ -179,7 +179,7 @@ export function ContractList({ clientId }: ContractListProps) {
       case ContractStatus.Expired:
         return "orange";
       case ContractStatus.Renewed:
-        return "blue";
+        return "orange";
       case ContractStatus.Cancelled:
         return "red";
       default:
