@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Layout, Menu, Dropdown } from "antd";
+import { Layout, Menu, Dropdown, message } from "antd";
 import {
   HomeOutlined,
   FolderOutlined,
@@ -13,10 +14,12 @@ import {
   DollarOutlined,
   DownOutlined,
   LogoutOutlined,
+  UserAddOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { useAuthState, useAuthActions } from "@/providers/auth-provider";
 import { isSalesRepOnly } from "@/utils/route-roles";
+import { InviteUserModal } from "@/components/invite-user";
 import { useAppShellStyles } from "./styles";
 
 const { Sider, Content } = Layout;
@@ -35,6 +38,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { session } = useAuthState();
   const { logout } = useAuthActions();
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const isAdmin = session?.user?.roles?.includes("Admin");
   const showDashboardInNav = !isSalesRepOnly(session?.user?.roles);
   const menuItems: MenuProps["items"] = showDashboardInNav
     ? [
@@ -111,6 +116,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 
   const userDropdownItems: MenuProps["items"] = [
+    ...(isAdmin
+      ? [
+          {
+            key: "invite",
+            icon: <UserAddOutlined />,
+            label: "Invite user",
+            onClick: () => setInviteModalOpen(true),
+          },
+        ]
+      : []),
     {
       key: "logout",
       icon: <LogoutOutlined />,
@@ -164,6 +179,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Dropdown>
         </div>
       </Sider>
+      {session?.user?.tenantId ? (
+        <InviteUserModal
+          open={inviteModalOpen}
+          onClose={() => setInviteModalOpen(false)}
+          onSuccess={() => message.success("Invite sent.")}
+          tenantId={session.user.tenantId}
+        />
+      ) : null}
       <Layout className={styles.mainLayout}>
         <Content className={styles.content}>{children}</Content>
       </Layout>

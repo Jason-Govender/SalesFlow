@@ -6,6 +6,10 @@ import { AuthProvider } from "../providers/auth-provider";
 
 import "antd/dist/reset.css";
 
+export const metadata: Metadata = {
+  title: "Salestra",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
