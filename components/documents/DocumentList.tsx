@@ -170,7 +170,7 @@ export function DocumentList({ clientId, opportunityId }: DocumentListProps) {
             key: "download",
             icon: <DownloadOutlined />,
             label: "Download",
-            onClick: (e) => {
+            onClick: (e: { domEvent?: React.MouseEvent }) => {
               e.domEvent?.stopPropagation?.();
               handleDownload(record);
             },
@@ -183,7 +183,7 @@ export function DocumentList({ clientId, opportunityId }: DocumentListProps) {
                   icon: <DeleteOutlined />,
                   label: "Delete",
                   danger: true,
-                  onClick: (e) => {
+                  onClick: (e: { domEvent?: React.MouseEvent }) => {
                     e.domEvent?.stopPropagation?.();
                     handleDelete(record);
                   },
