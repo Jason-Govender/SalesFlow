@@ -206,12 +206,13 @@ export function NoteList({ clientId, opportunityId }: NoteListProps) {
           },
         ];
         return (
-          <Dropdown
-            menu={{ items }}
-            trigger={["click"]}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Button type="text" size="small" icon={<MoreOutlined />} />
+          <Dropdown menu={{ items }} trigger={["click"]}>
+            <Button
+              type="text"
+              size="small"
+              icon={<MoreOutlined />}
+              onClick={(e) => e.stopPropagation()}
+            />
           </Dropdown>
         );
       },

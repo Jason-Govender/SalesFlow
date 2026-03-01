@@ -195,13 +195,13 @@ export function DocumentList({ clientId, opportunityId }: DocumentListProps) {
           <Dropdown
             menu={{ items }}
             trigger={["click"]}
-            onClick={(e) => e.stopPropagation()}
           >
             <Button
               type="text"
               size="small"
               icon={<MoreOutlined />}
               loading={downloadingId === record.id}
+              onClick={(e) => e.stopPropagation()}
             />
           </Dropdown>
         );
