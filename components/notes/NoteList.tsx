@@ -38,16 +38,20 @@ function truncate(str: string, max: number): string {
 }
 
 interface NoteListProps {
-  clientId: string;
+  /** When set, list is scoped to this client. */
+  clientId?: string;
+  /** When set, list is scoped to this opportunity (takes precedence over clientId for loading). */
+  opportunityId?: string;
 }
 
-export function NoteList({ clientId }: NoteListProps) {
+export function NoteList({ clientId, opportunityId }: NoteListProps) {
   const { session } = useAuthState();
   const currentUserId = session?.user?.userId;
 
   const { notes, isPending, isError, error, actionPending } = useNotesState();
   const {
     loadNotesByClient,
+    loadNotesByOpportunity,
     clearNotes,
     createNote,
     updateNote,
@@ -60,13 +64,15 @@ export function NoteList({ clientId }: NoteListProps) {
   const [form] = Form.useForm();
 
   useEffect(() => {
-    if (clientId) {
+    if (opportunityId) {
+      loadNotesByOpportunity(opportunityId);
+    } else if (clientId) {
       loadNotesByClient(clientId);
     }
     return () => {
       clearNotes();
     };
-  }, [clientId, loadNotesByClient, clearNotes]);
+  }, [clientId, opportunityId, loadNotesByClient, loadNotesByOpportunity, clearNotes]);
 
   const handleAdd = () => {
     setEditingNote(null);
@@ -95,7 +101,7 @@ export function NoteList({ clientId }: NoteListProps) {
       } else {
         await createNote({
           content,
-          clientId,
+          ...(opportunityId ? { opportunityId } : clientId ? { clientId } : {}),
           isPrivate: values.isPrivate ?? false,
         });
       }
@@ -203,7 +209,17 @@ export function NoteList({ clientId }: NoteListProps) {
           type="error"
           showIcon
           action={
-            <Button type="link" size="small" onClick={() => loadNotesByClient(clientId)}>
+            <Button
+              type="link"
+              size="small"
+              onClick={() =>
+                opportunityId
+                  ? loadNotesByOpportunity(opportunityId)
+                  : clientId
+                    ? loadNotesByClient(clientId)
+                    : undefined
+              }
+            >
               Retry
             </Button>
           }

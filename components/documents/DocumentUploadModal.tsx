@@ -17,7 +17,8 @@ interface DocumentUploadModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  clientId: string;
+  clientId?: string;
+  opportunityId?: string;
   loading?: boolean;
 }
 
@@ -26,6 +27,7 @@ export function DocumentUploadModal({
   onClose,
   onSuccess,
   clientId,
+  opportunityId,
   loading = false,
 }: DocumentUploadModalProps) {
   const { uploadDocument } = useDocumentsActions();
@@ -56,7 +58,7 @@ export function DocumentUploadModal({
     try {
       await uploadDocument({
         file,
-        clientId,
+        ...(opportunityId ? { opportunityId } : clientId ? { clientId } : {}),
         description: values.description?.trim() || undefined,
         documentCategory: values.documentCategory,
       });

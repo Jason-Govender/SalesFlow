@@ -24,16 +24,17 @@ export const loadDocumentsPending = createAction<IDocumentsStateContext>(
 
 export const loadDocumentsSuccess = createAction<
   IDocumentsStateContext,
-  { documents: IDocument[]; clientId: string }
+  { documents: IDocument[]; clientId?: string | null; opportunityId?: string | null }
 >(
   DocumentsActionEnums.loadDocumentsSuccess,
-  ({ documents, clientId }) =>
+  ({ documents, clientId, opportunityId }) =>
     ({
       isPending: false,
       isError: false,
       error: undefined,
       documents,
-      currentClientId: clientId,
+      currentClientId: clientId ?? null,
+      currentOpportunityId: opportunityId ?? null,
     }) as IDocumentsStateContext
 );
 
@@ -54,6 +55,7 @@ export const clearDocumentsAction = createAction<IDocumentsStateContext>(
     ({
       documents: null,
       currentClientId: null,
+      currentOpportunityId: null,
       isError: false,
       error: undefined,
     }) as IDocumentsStateContext

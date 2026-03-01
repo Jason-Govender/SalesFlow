@@ -26,6 +26,7 @@ import {
 
 import { notesService } from "../../utils/notes-service";
 import { RelatedToType } from "../../utils/activities-service";
+import type { ICreateNoteParams } from "./context";
 
 export const NotesProvider = ({
   children,
@@ -44,7 +45,22 @@ export const NotesProvider = ({
         relatedToType: RelatedToType.Client,
         relatedToId: clientId,
       });
-      dispatch(loadNotesSuccess({ notes: response.items, clientId }));
+      dispatch(loadNotesSuccess({ notes: response.items, clientId, opportunityId: null }));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load notes.";
+      dispatch(loadNotesError(message));
+    }
+  }, []);
+
+  const loadNotesByOpportunity = useCallback(async (opportunityId: string): Promise<void> => {
+    dispatch(loadNotesPending());
+    try {
+      const response = await notesService.listNotes({
+        relatedToType: RelatedToType.Opportunity,
+        relatedToId: opportunityId,
+      });
+      dispatch(loadNotesSuccess({ notes: response.items, clientId: null, opportunityId }));
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Failed to load notes.";
@@ -57,17 +73,28 @@ export const NotesProvider = ({
   }, []);
 
   const createNote = useCallback(
-    async (params: { content: string; clientId: string; isPrivate?: boolean }) => {
+    async (params: ICreateNoteParams) => {
       dispatch(actionPendingAction());
+      const relatedToType = params.opportunityId
+        ? RelatedToType.Opportunity
+        : RelatedToType.Client;
+      const relatedToId = params.opportunityId ?? params.clientId ?? "";
+      if (!relatedToId) throw new Error("clientId or opportunityId is required");
       try {
         const note = await notesService.createNote({
           content: params.content,
-          relatedToType: RelatedToType.Client,
-          relatedToId: params.clientId,
+          relatedToType,
+          relatedToId,
           isPrivate: params.isPrivate ?? false,
         });
         dispatch(actionSuccessAction());
-        if (state.currentClientId === params.clientId) {
+        if (params.opportunityId && state.currentOpportunityId === params.opportunityId) {
+          const response = await notesService.listNotes({
+            relatedToType: RelatedToType.Opportunity,
+            relatedToId: params.opportunityId,
+          });
+          dispatch(loadNotesSuccess({ notes: response.items, opportunityId: params.opportunityId }));
+        } else if (params.clientId && state.currentClientId === params.clientId) {
           const response = await notesService.listNotes({
             relatedToType: RelatedToType.Client,
             relatedToId: params.clientId,
@@ -82,7 +109,7 @@ export const NotesProvider = ({
         throw error;
       }
     },
-    [state.currentClientId]
+    [state.currentClientId, state.currentOpportunityId]
   );
 
   const updateNote = useCallback(
@@ -91,13 +118,18 @@ export const NotesProvider = ({
       try {
         const note = await notesService.updateNote(id, params);
         dispatch(actionSuccessAction());
-        const clientId = state.currentClientId;
-        if (clientId) {
+        if (state.currentOpportunityId) {
+          const response = await notesService.listNotes({
+            relatedToType: RelatedToType.Opportunity,
+            relatedToId: state.currentOpportunityId,
+          });
+          dispatch(loadNotesSuccess({ notes: response.items, opportunityId: state.currentOpportunityId }));
+        } else if (state.currentClientId) {
           const response = await notesService.listNotes({
             relatedToType: RelatedToType.Client,
-            relatedToId: clientId,
+            relatedToId: state.currentClientId,
           });
-          dispatch(loadNotesSuccess({ notes: response.items, clientId }));
+          dispatch(loadNotesSuccess({ notes: response.items, clientId: state.currentClientId }));
         }
         return note;
       } catch (error: unknown) {
@@ -107,7 +139,7 @@ export const NotesProvider = ({
         throw error;
       }
     },
-    [state.currentClientId]
+    [state.currentClientId, state.currentOpportunityId]
   );
 
   const deleteNote = useCallback(
@@ -116,13 +148,18 @@ export const NotesProvider = ({
       try {
         await notesService.deleteNote(id);
         dispatch(actionSuccessAction());
-        const clientId = state.currentClientId;
-        if (clientId) {
+        if (state.currentOpportunityId) {
+          const response = await notesService.listNotes({
+            relatedToType: RelatedToType.Opportunity,
+            relatedToId: state.currentOpportunityId,
+          });
+          dispatch(loadNotesSuccess({ notes: response.items, opportunityId: state.currentOpportunityId }));
+        } else if (state.currentClientId) {
           const response = await notesService.listNotes({
             relatedToType: RelatedToType.Client,
-            relatedToId: clientId,
+            relatedToId: state.currentClientId,
           });
-          dispatch(loadNotesSuccess({ notes: response.items, clientId }));
+          dispatch(loadNotesSuccess({ notes: response.items, clientId: state.currentClientId }));
         }
       } catch (error: unknown) {
         const message =
@@ -131,7 +168,7 @@ export const NotesProvider = ({
         throw error;
       }
     },
-    [state.currentClientId]
+    [state.currentClientId, state.currentOpportunityId]
   );
 
   const stateValue = useMemo(() => state, [state]);
@@ -139,6 +176,7 @@ export const NotesProvider = ({
   const actionValue = useMemo(
     () => ({
       loadNotesByClient,
+      loadNotesByOpportunity,
       clearNotes,
       createNote,
       updateNote,
@@ -146,6 +184,7 @@ export const NotesProvider = ({
     }),
     [
       loadNotesByClient,
+      loadNotesByOpportunity,
       clearNotes,
       createNote,
       updateNote,

@@ -77,6 +77,30 @@ export const PricingRequestsProvider = ({
     [state.filters, state.pagination.pageNumber, state.pagination.pageSize]
   );
 
+  const loadPricingRequestsByOpportunity = useCallback(
+    async (
+      opportunityId: string,
+      params?: { pageNumber?: number; pageSize?: number }
+    ): Promise<void> => {
+      dispatch(loadPricingRequestsPending());
+      try {
+        const response = await pricingRequestsService.getPricingRequests({
+          opportunityId,
+          pageNumber: params?.pageNumber ?? 1,
+          pageSize: params?.pageSize ?? 10,
+        });
+        dispatch(loadPricingRequestsSuccess(response));
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to load pricing requests.";
+        dispatch(loadPricingRequestsError(message));
+      }
+    },
+    []
+  );
+
   const loadPending = useCallback(async (): Promise<void> => {
     dispatch(loadPendingPending());
     try {
@@ -257,6 +281,7 @@ export const PricingRequestsProvider = ({
   const actionValue = useMemo(
     () => ({
       loadPricingRequests,
+      loadPricingRequestsByOpportunity,
       loadPending,
       loadMyRequests,
       loadPricingRequest,
@@ -270,6 +295,7 @@ export const PricingRequestsProvider = ({
     }),
     [
       loadPricingRequests,
+      loadPricingRequestsByOpportunity,
       loadPending,
       loadMyRequests,
       loadPricingRequest,

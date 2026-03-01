@@ -52,6 +52,10 @@ export const INITIAL_PRICING_REQUESTS_STATE: IPricingRequestsStateContext = {
 
 export interface IPricingRequestsActionContext {
   loadPricingRequests: (params?: IPricingRequestsListParams) => Promise<void>;
+  loadPricingRequestsByOpportunity: (
+    opportunityId: string,
+    params?: { pageNumber?: number; pageSize?: number }
+  ) => Promise<void>;
   loadPending: () => Promise<void>;
   loadMyRequests: () => Promise<void>;
   loadPricingRequest: (id: string) => Promise<void>;

@@ -42,7 +42,19 @@ export const DocumentsProvider = ({
     dispatch(loadDocumentsPending());
     try {
       const documents = await documentsService.getDocumentsByClient(clientId);
-      dispatch(loadDocumentsSuccess({ documents, clientId }));
+      dispatch(loadDocumentsSuccess({ documents, clientId, opportunityId: null }));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load documents.";
+      dispatch(loadDocumentsError(message));
+    }
+  }, []);
+
+  const loadDocumentsByOpportunity = useCallback(async (opportunityId: string): Promise<void> => {
+    dispatch(loadDocumentsPending());
+    try {
+      const documents = await documentsService.getDocumentsByOpportunity(opportunityId);
+      dispatch(loadDocumentsSuccess({ documents, clientId: null, opportunityId }));
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Failed to load documents.";
@@ -55,18 +67,30 @@ export const DocumentsProvider = ({
   }, []);
 
   const uploadDocument = useCallback(
-    async (params: { file: File; clientId: string; description?: string; documentCategory?: number }) => {
+    async (params: {
+      file: File;
+      clientId?: string;
+      opportunityId?: string;
+      description?: string;
+      documentCategory?: number;
+    }) => {
       dispatch(actionPendingAction());
+      const relatedToType = params.opportunityId ? 2 : 1;
+      const relatedToId = params.opportunityId ?? params.clientId ?? "";
+      if (!relatedToId) throw new Error("clientId or opportunityId is required");
       try {
         const document = await documentsService.uploadDocument({
           file: params.file,
-          relatedToType: 1,
-          relatedToId: params.clientId,
+          relatedToType,
+          relatedToId,
           description: params.description,
           documentCategory: params.documentCategory,
         });
         dispatch(actionSuccessAction());
-        if (state.currentClientId === params.clientId) {
+        if (params.opportunityId && state.currentOpportunityId === params.opportunityId) {
+          const documents = await documentsService.getDocumentsByOpportunity(params.opportunityId);
+          dispatch(loadDocumentsSuccess({ documents, opportunityId: params.opportunityId }));
+        } else if (params.clientId && state.currentClientId === params.clientId) {
           const documents = await documentsService.getDocumentsByClient(params.clientId);
           dispatch(loadDocumentsSuccess({ documents, clientId: params.clientId }));
         }
@@ -78,7 +102,7 @@ export const DocumentsProvider = ({
         throw error;
       }
     },
-    [state.currentClientId]
+    [state.currentClientId, state.currentOpportunityId]
   );
 
   const deleteDocument = useCallback(
@@ -87,10 +111,12 @@ export const DocumentsProvider = ({
       try {
         await documentsService.deleteDocument(id);
         dispatch(actionSuccessAction());
-        const clientId = state.currentClientId;
-        if (clientId) {
-          const documents = await documentsService.getDocumentsByClient(clientId);
-          dispatch(loadDocumentsSuccess({ documents, clientId }));
+        if (state.currentOpportunityId) {
+          const documents = await documentsService.getDocumentsByOpportunity(state.currentOpportunityId);
+          dispatch(loadDocumentsSuccess({ documents, opportunityId: state.currentOpportunityId }));
+        } else if (state.currentClientId) {
+          const documents = await documentsService.getDocumentsByClient(state.currentClientId);
+          dispatch(loadDocumentsSuccess({ documents, clientId: state.currentClientId }));
         }
       } catch (error: unknown) {
         const message =
@@ -99,7 +125,7 @@ export const DocumentsProvider = ({
         throw error;
       }
     },
-    [state.currentClientId]
+    [state.currentClientId, state.currentOpportunityId]
   );
 
   const stateValue = useMemo(() => state, [state]);
@@ -107,12 +133,14 @@ export const DocumentsProvider = ({
   const actionValue = useMemo(
     () => ({
       loadDocumentsByClient,
+      loadDocumentsByOpportunity,
       clearDocuments,
       uploadDocument,
       deleteDocument,
     }),
     [
       loadDocumentsByClient,
+      loadDocumentsByOpportunity,
       clearDocuments,
       uploadDocument,
       deleteDocument,

@@ -26,6 +26,7 @@ import {
 import { useAuthState } from "@/providers/auth-provider";
 import { useOpportunitiesState, useOpportunitiesActions } from "@/providers/opportunities-provider";
 import { useContactsState, useContactsActions } from "@/providers/contacts-provider";
+import { useClientsState, useClientsActions } from "@/providers/clients-provider";
 import type { IOpportunity } from "@/utils/opportunities-service";
 import {
   OPPORTUNITY_STAGE_LABELS,
@@ -39,16 +40,31 @@ import { AssignOpportunityModal } from "./AssignOpportunityModal";
 const ROLES_CAN_ASSIGN_OR_DELETE_OPPORTUNITY: string[] = ["Admin", "SalesManager"];
 
 function formatCurrency(value: number, currency = "ZAR"): string {
+  // #region agent log
+  fetch("http://127.0.0.1:7550/ingest/2a3a292b-d656-4762-8562-b6e2ce0817a8", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ae026c" },
+    body: JSON.stringify({
+      sessionId: "ae026c",
+      location: "OpportunityList.tsx:formatCurrency",
+      message: "formatCurrency called",
+      data: { currency, value, hypothesisId: "H3" },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+  const isoCurrency = currency === "R" ? "ZAR" : currency;
   return new Intl.NumberFormat("en-ZA", {
     style: "currency",
-    currency,
+    currency: isoCurrency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
 }
 
 interface OpportunityListProps {
-  clientId: string;
+  /** When set, list is scoped to this client. When undefined, lists all opportunities with a Client column. */
+  clientId?: string;
 }
 
 export function OpportunityList({ clientId }: OpportunityListProps) {
@@ -71,6 +87,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   } = useOpportunitiesState();
   const {
     loadOpportunitiesByClient,
+    loadOpportunities,
     clearOpportunities,
     createOpportunity,
     updateOpportunity,
@@ -81,6 +98,16 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
 
   const { contacts } = useContactsState();
   const { loadContactsByClient } = useContactsActions();
+  const { clients } = useClientsState();
+  const { loadClients } = useClientsActions();
+
+  const clientIdToName = (clients ?? []).reduce<Record<string, string>>(
+    (acc, c) => {
+      acc[c.id] = c.name;
+      return acc;
+    },
+    {}
+  );
 
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingOpportunity, setEditingOpportunity] = useState<IOpportunity | null>(null);
@@ -91,8 +118,14 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   const [stageFilter, setStageFilter] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    if (clientId) {
+    if (clientId != null) {
       loadOpportunitiesByClient(clientId, {
+        pageNumber: 1,
+        pageSize: 10,
+        stage: stageFilter,
+      });
+    } else {
+      loadOpportunities({
         pageNumber: 1,
         pageSize: 10,
         stage: stageFilter,
@@ -101,14 +134,28 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
     return () => {
       clearOpportunities();
     };
-  }, [clientId, stageFilter]);
+  }, [clientId, stageFilter, loadOpportunitiesByClient, loadOpportunities, clearOpportunities]);
 
-  const handlePageChange = (page: number, pageSize?: number) => {
-    loadOpportunitiesByClient(clientId, {
-      pageNumber: page,
-      pageSize: pageSize ?? 10,
-      stage: stageFilter,
-    });
+  useEffect(() => {
+    if (clientId == null && !clients?.length) {
+      loadClients({ pageSize: 500 });
+    }
+  }, [clientId, clients?.length, loadClients]);
+
+  const handlePageChange = (page: number, newPageSize?: number) => {
+    if (clientId != null) {
+      loadOpportunitiesByClient(clientId, {
+        pageNumber: page,
+        pageSize: newPageSize ?? pageSize,
+        stage: stageFilter,
+      });
+    } else {
+      loadOpportunities({
+        pageNumber: page,
+        pageSize: newPageSize ?? pageSize,
+        stage: stageFilter,
+      });
+    }
   };
 
   const handleAdd = () => {
@@ -124,10 +171,15 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   const handleFormSuccess = () => {
     setFormModalOpen(false);
     setEditingOpportunity(null);
-    loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+    if (clientId != null) {
+      loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+    } else {
+      loadOpportunities({ pageNumber, pageSize, stage: stageFilter });
+    }
   };
 
   const handleCreateSubmit = async (values: OpportunityFormValues) => {
+    if (clientId == null) return;
     await createOpportunity({
       ...values,
       clientId,
@@ -161,13 +213,21 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   const handleAssignSuccess = () => {
     setAssignModalOpen(false);
     setAssignModalOpportunity(null);
-    loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+    if (clientId != null) {
+      loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+    } else {
+      loadOpportunities({ pageNumber, pageSize, stage: stageFilter });
+    }
   };
 
   const handleStageSuccess = () => {
     setStageModalOpen(false);
     setStageModalOpportunity(null);
-    loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+    if (clientId != null) {
+      loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+    } else {
+      loadOpportunities({ pageNumber, pageSize, stage: stageFilter });
+    }
   };
 
   const handleDelete = (record: IOpportunity) => {
@@ -179,10 +239,16 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
       cancelText: "Cancel",
       onOk: async () => {
         await deleteOpportunity(record.id);
-        loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+        if (clientId != null) {
+          loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+        } else {
+          loadOpportunities({ pageNumber, pageSize, stage: stageFilter });
+        }
       },
     });
   };
+
+  const effectiveClientId = (record: IOpportunity) => clientId ?? record.clientId;
 
   const stageOptions = [
     { value: undefined, label: "All stages" },
@@ -193,6 +259,16 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   ];
 
   const columns = [
+    ...(clientId == null
+      ? [
+          {
+            title: "Client",
+            dataIndex: "clientId",
+            key: "clientId",
+            render: (id: string) => (id ? clientIdToName[id] ?? id : "—"),
+          },
+        ]
+      : []),
     {
       title: "Title",
       dataIndex: "title",
@@ -201,7 +277,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
         <a
           onClick={(e) => {
             e.stopPropagation();
-            router.push(`/clients/${clientId}/opportunities/${record.id}`);
+            router.push(`/clients/${effectiveClientId(record)}/opportunities/${record.id}`);
           }}
         >
           {val || "—"}
@@ -247,7 +323,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
             key: "view",
             icon: <EyeOutlined />,
             label: "View",
-            onClick: () => router.push(`/clients/${clientId}/opportunities/${record.id}`),
+            onClick: () => router.push(`/clients/${effectiveClientId(record)}/opportunities/${record.id}`),
           },
           {
             key: "edit",
@@ -316,7 +392,9 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
               type="link"
               size="small"
               onClick={() =>
-                loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter })
+                clientId != null
+                  ? loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter })
+                  : loadOpportunities({ pageNumber, pageSize, stage: stageFilter })
               }
             >
               Retry
@@ -333,9 +411,11 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
           placeholder="Filter by stage"
           allowClear
         />
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-          Add opportunity
-        </Button>
+        {clientId != null && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+            Add opportunity
+          </Button>
+        )}
       </div>
       <Table
         loading={isPending}
@@ -358,7 +438,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
           setEditingOpportunity(null);
         }}
         onSuccess={handleFormSuccess}
-        clientId={clientId}
+        clientId={clientId ?? editingOpportunity?.clientId ?? ""}
         opportunity={editingOpportunity}
         contacts={contacts ?? []}
         onSubmit={handleCreateSubmit}

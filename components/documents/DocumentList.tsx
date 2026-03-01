@@ -52,10 +52,13 @@ function triggerDownload(blob: Blob, fileName: string) {
 }
 
 interface DocumentListProps {
-  clientId: string;
+  /** When set, list is scoped to this client. */
+  clientId?: string;
+  /** When set, list is scoped to this opportunity (takes precedence over clientId for loading). */
+  opportunityId?: string;
 }
 
-export function DocumentList({ clientId }: DocumentListProps) {
+export function DocumentList({ clientId, opportunityId }: DocumentListProps) {
   const { session } = useAuthState();
   const userRoles = session?.user?.roles ?? [];
   const canDeleteDocument = userRoles.some((r) =>
@@ -71,6 +74,7 @@ export function DocumentList({ clientId }: DocumentListProps) {
   } = useDocumentsState();
   const {
     loadDocumentsByClient,
+    loadDocumentsByOpportunity,
     clearDocuments,
     deleteDocument,
   } = useDocumentsActions();
@@ -92,17 +96,20 @@ export function DocumentList({ clientId }: DocumentListProps) {
   }, []);
 
   useEffect(() => {
-    if (clientId) {
+    if (opportunityId) {
+      loadDocumentsByOpportunity(opportunityId);
+    } else if (clientId) {
       loadDocumentsByClient(clientId);
     }
     return () => {
       clearDocuments();
     };
-  }, [clientId, loadDocumentsByClient, clearDocuments]);
+  }, [clientId, opportunityId, loadDocumentsByClient, loadDocumentsByOpportunity, clearDocuments]);
 
   const handleUploadSuccess = () => {
     setUploadModalOpen(false);
-    if (clientId) loadDocumentsByClient(clientId);
+    if (opportunityId) loadDocumentsByOpportunity(opportunityId);
+    else if (clientId) loadDocumentsByClient(clientId);
   };
 
   const handleDelete = (doc: IDocument) => {
@@ -209,7 +216,13 @@ export function DocumentList({ clientId }: DocumentListProps) {
             <Button
               type="link"
               size="small"
-              onClick={() => loadDocumentsByClient(clientId)}
+              onClick={() =>
+                opportunityId
+                  ? loadDocumentsByOpportunity(opportunityId)
+                  : clientId
+                    ? loadDocumentsByClient(clientId)
+                    : undefined
+              }
             >
               Retry
             </Button>
@@ -237,6 +250,7 @@ export function DocumentList({ clientId }: DocumentListProps) {
         onClose={() => setUploadModalOpen(false)}
         onSuccess={handleUploadSuccess}
         clientId={clientId}
+        opportunityId={opportunityId}
         loading={actionPending}
       />
     </Space>

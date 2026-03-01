@@ -52,6 +52,21 @@ export const ContractsProvider = ({
     }
   }, []);
 
+  const loadContracts = useCallback(
+    async (params?: { clientId?: string; status?: number; pageNumber?: number; pageSize?: number }): Promise<void> => {
+      dispatch(loadContractsPending());
+      try {
+        const contracts = await contractsService.listContracts(params);
+        dispatch(loadContractsSuccess({ contracts, clientId: null }));
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Failed to load contracts.";
+        dispatch(loadContractsError(message));
+      }
+    },
+    []
+  );
+
   const clearContracts = useCallback(() => {
     dispatch(clearContractsAction());
   }, []);
@@ -71,6 +86,9 @@ export const ContractsProvider = ({
         if (state.currentClientId === clientId) {
           const contracts = await contractsService.getContractsByClient(clientId);
           dispatch(loadContractsSuccess({ contracts, clientId }));
+        } else if (state.currentClientId === null) {
+          const contracts = await contractsService.listContracts();
+          dispatch(loadContractsSuccess({ contracts, clientId: null }));
         }
         return contract;
       } catch (error: unknown) {
@@ -93,6 +111,9 @@ export const ContractsProvider = ({
         if (clientId) {
           const contracts = await contractsService.getContractsByClient(clientId);
           dispatch(loadContractsSuccess({ contracts, clientId }));
+        } else if (clientId === null) {
+          const contracts = await contractsService.listContracts();
+          dispatch(loadContractsSuccess({ contracts, clientId: null }));
         }
       } catch (error: unknown) {
         const message =
@@ -114,6 +135,9 @@ export const ContractsProvider = ({
         if (clientId) {
           const contracts = await contractsService.getContractsByClient(clientId);
           dispatch(loadContractsSuccess({ contracts, clientId }));
+        } else if (clientId === null) {
+          const contracts = await contractsService.listContracts();
+          dispatch(loadContractsSuccess({ contracts, clientId: null }));
         }
       } catch (error: unknown) {
         const message =
@@ -137,6 +161,9 @@ export const ContractsProvider = ({
         if (clientId) {
           const contracts = await contractsService.getContractsByClient(clientId);
           dispatch(loadContractsSuccess({ contracts, clientId }));
+        } else if (clientId === null) {
+          const contracts = await contractsService.listContracts();
+          dispatch(loadContractsSuccess({ contracts, clientId: null }));
         }
       } catch (error: unknown) {
         const message =
@@ -160,6 +187,9 @@ export const ContractsProvider = ({
         if (clientId) {
           const contracts = await contractsService.getContractsByClient(clientId);
           dispatch(loadContractsSuccess({ contracts, clientId }));
+        } else if (clientId === null) {
+          const contracts = await contractsService.listContracts();
+          dispatch(loadContractsSuccess({ contracts, clientId: null }));
         }
       } catch (error: unknown) {
         const message =
@@ -176,6 +206,7 @@ export const ContractsProvider = ({
   const actionValue = useMemo(
     () => ({
       loadContractsByClient,
+      loadContracts,
       clearContracts,
       createContract,
       updateContract,
@@ -185,6 +216,7 @@ export const ContractsProvider = ({
     }),
     [
       loadContractsByClient,
+      loadContracts,
       clearContracts,
       createContract,
       updateContract,

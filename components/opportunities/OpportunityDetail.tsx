@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -14,6 +14,7 @@ import {
   Table,
   Dropdown,
   Modal,
+  Tabs,
 } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -27,6 +28,7 @@ import {
 import { useAuthState } from "@/providers/auth-provider";
 import { useOpportunitiesState, useOpportunitiesActions } from "@/providers/opportunities-provider";
 import { useContactsState, useContactsActions } from "@/providers/contacts-provider";
+import { usePricingRequestsState, usePricingRequestsActions } from "@/providers/pricing-requests-provider";
 import {
   OPPORTUNITY_STAGE_LABELS,
   OPPORTUNITY_SOURCE_LABELS,
@@ -39,14 +41,19 @@ import { StageChangeModal } from "./StageChangeModal";
 import { AssignOpportunityModal } from "./AssignOpportunityModal";
 import { ActivityList } from "@/components/activities/ActivityList";
 import { ProposalList } from "@/components/proposals";
+import { PricingRequestList } from "@/components/pricing-requests";
+import { ContractList } from "@/components/contracts/ContractList";
+import { NoteList } from "@/components/notes/NoteList";
+import { DocumentList } from "@/components/documents/DocumentList";
 import { RelatedToType } from "@/utils/activities-service";
 
 const ROLES_CAN_ASSIGN_OR_DELETE_OPPORTUNITY: string[] = ["Admin", "SalesManager"];
 
 function formatCurrency(value: number, currency = "ZAR"): string {
+  const isoCurrency = currency === "R" ? "ZAR" : currency;
   return new Intl.NumberFormat("en-ZA", {
     style: "currency",
-    currency,
+    currency: isoCurrency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
@@ -84,10 +91,23 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
 
   const { contacts } = useContactsState();
   const { loadContactsByClient } = useContactsActions();
+  const {
+    pricingRequests,
+    isPending: pricingRequestsPending,
+    error: pricingRequestsError,
+    pagination: pricingRequestsPagination,
+  } = usePricingRequestsState();
+  const { loadPricingRequestsByOpportunity } = usePricingRequestsActions();
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [stageModalOpen, setStageModalOpen] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (selectedOpportunity?.id) {
+      loadPricingRequestsByOpportunity(selectedOpportunity.id);
+    }
+  }, [selectedOpportunity?.id, loadPricingRequestsByOpportunity]);
 
   const handleEditSuccess = () => {
     setEditModalOpen(false);
@@ -299,20 +319,78 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
         </Card>
       )}
 
-      <Card title="Proposals">
-        <ProposalList
-          clientId={clientId}
-          opportunityId={opp.id}
-          showCreateButton
-          createHref={`/proposals/new?clientId=${clientId}&opportunityId=${opp.id}`}
-        />
-      </Card>
-
-      <Card title="Activities">
-        <ActivityList
-          relatedToType={RelatedToType.Opportunity}
-          relatedToId={opp.id}
-          compact
+      <Card>
+        <Tabs
+          defaultActiveKey="proposals"
+          items={[
+            {
+              key: "proposals",
+              label: "Proposals",
+              children: (
+                <ProposalList
+                  clientId={clientId}
+                  opportunityId={opp.id}
+                  showCreateButton
+                  createHref={`/opportunities/proposals/new?clientId=${clientId}&opportunityId=${opp.id}`}
+                />
+              ),
+            },
+            {
+              key: "pricing-requests",
+              label: "Pricing requests",
+              children: (
+                <PricingRequestList
+                  items={pricingRequests}
+                  loading={pricingRequestsPending}
+                  error={pricingRequestsError}
+                  onRetry={() => loadPricingRequestsByOpportunity(opp.id)}
+                  pagination={
+                    pricingRequestsPagination
+                      ? {
+                          pageNumber: pricingRequestsPagination.pageNumber,
+                          pageSize: pricingRequestsPagination.pageSize,
+                          totalCount: pricingRequestsPagination.totalCount,
+                          onChange: (page: number, pageSize?: number) => {
+                            loadPricingRequestsByOpportunity(opp.id, {
+                              pageNumber: page,
+                              pageSize,
+                            });
+                          },
+                        }
+                      : undefined
+                  }
+                />
+              ),
+            },
+            {
+              key: "contracts",
+              label: "Contracts",
+              children: (
+                <ContractList clientId={clientId} opportunityId={opp.id} />
+              ),
+            },
+            {
+              key: "activities",
+              label: "Activities",
+              children: (
+                <ActivityList
+                  relatedToType={RelatedToType.Opportunity}
+                  relatedToId={opp.id}
+                  compact
+                />
+              ),
+            },
+            {
+              key: "notes",
+              label: "Notes",
+              children: <NoteList opportunityId={opp.id} />,
+            },
+            {
+              key: "documents",
+              label: "Documents",
+              children: <DocumentList opportunityId={opp.id} />,
+            },
+          ]}
         />
       </Card>
 

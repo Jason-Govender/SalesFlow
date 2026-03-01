@@ -271,7 +271,7 @@ export default function ClientDetailPage() {
             items={[
               { key: "contacts", label: "Contacts", children: id ? <ContactList clientId={id} /> : null },
               { key: "opportunities", label: "Opportunities", children: id ? <OpportunityList clientId={id} /> : null },
-              { key: "proposals", label: "Proposals", children: id ? <ProposalList clientId={id} showCreateButton createHref={`/proposals/new?clientId=${id}`} /> : null },
+              { key: "proposals", label: "Proposals", children: id ? <ProposalList clientId={id} showCreateButton createHref={`/opportunities/proposals/new?clientId=${id}`} /> : null },
               { key: "contracts", label: "Contracts", children: id ? <ContractList clientId={id} /> : null },
               { key: "activities", label: "Activities", children: id ? <ActivityList relatedToType={RelatedToType.Client} relatedToId={id} /> : null },
               { key: "documents", label: "Documents", children: id ? <DocumentList clientId={id} /> : null },

@@ -4,6 +4,7 @@ import type { INote } from "../../utils/notes-service";
 export interface INotesStateContext {
   notes: INote[] | null;
   currentClientId: string | null;
+  currentOpportunityId: string | null;
   isPending: boolean;
   isError: boolean;
   error?: string;
@@ -13,6 +14,7 @@ export interface INotesStateContext {
 export const INITIAL_NOTES_STATE: INotesStateContext = {
   notes: null,
   currentClientId: null,
+  currentOpportunityId: null,
   isPending: false,
   isError: false,
   error: undefined,
@@ -21,7 +23,8 @@ export const INITIAL_NOTES_STATE: INotesStateContext = {
 
 export interface ICreateNoteParams {
   content: string;
-  clientId: string;
+  clientId?: string;
+  opportunityId?: string;
   isPrivate?: boolean;
 }
 
@@ -32,6 +35,7 @@ export interface IUpdateNoteParams {
 
 export interface INotesActionContext {
   loadNotesByClient: (clientId: string) => Promise<void>;
+  loadNotesByOpportunity: (opportunityId: string) => Promise<void>;
   clearNotes: () => void;
   createNote: (params: ICreateNoteParams) => Promise<INote>;
   updateNote: (id: string, params: IUpdateNoteParams) => Promise<INote>;

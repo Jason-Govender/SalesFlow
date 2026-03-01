@@ -24,16 +24,17 @@ export const loadNotesPending = createAction<INotesStateContext>(
 
 export const loadNotesSuccess = createAction<
   INotesStateContext,
-  { notes: INote[]; clientId: string }
+  { notes: INote[]; clientId?: string | null; opportunityId?: string | null }
 >(
   NotesActionEnums.loadNotesSuccess,
-  ({ notes, clientId }) =>
+  ({ notes, clientId, opportunityId }) =>
     ({
       isPending: false,
       isError: false,
       error: undefined,
       notes,
-      currentClientId: clientId,
+      currentClientId: clientId ?? null,
+      currentOpportunityId: opportunityId ?? null,
     }) as INotesStateContext
 );
 
@@ -54,6 +55,7 @@ export const clearNotesAction = createAction<INotesStateContext>(
     ({
       notes: null,
       currentClientId: null,
+      currentOpportunityId: null,
       isError: false,
       error: undefined,
     }) as INotesStateContext

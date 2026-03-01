@@ -31,7 +31,7 @@ export const loadOpportunitiesSuccess = createAction<
   Partial<IOpportunitiesStateContext>,
   {
     opportunities: IOpportunity[];
-    clientId: string;
+    clientId?: string | null;
     pageNumber: number;
     pageSize: number;
     totalCount: number;
@@ -44,7 +44,7 @@ export const loadOpportunitiesSuccess = createAction<
       isError: false,
       error: undefined,
       opportunities,
-      currentClientId: clientId,
+      currentClientId: clientId ?? null,
       pageNumber,
       pageSize,
       totalCount,

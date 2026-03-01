@@ -72,6 +72,8 @@ export interface IAssignPricingRequestRequest {
 }
 
 export interface IPricingRequestsListParams {
+  clientId?: string;
+  opportunityId?: string;
   status?: PricingRequestStatus | number;
   priority?: Priority | number;
   assignedToId?: string;

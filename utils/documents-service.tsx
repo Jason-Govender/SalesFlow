@@ -96,6 +96,22 @@ export const documentsService = {
     }
   },
 
+  /** relatedToType 2 = Opportunity (see activities-service RelatedToType) */
+  async getDocumentsByOpportunity(opportunityId: string): Promise<IDocument[]> {
+    try {
+      const response = await axiosInstance.get<unknown>("/api/documents", {
+        params: { relatedToType: 2, relatedToId: opportunityId },
+      });
+      return parsePagedResponse<IDocument>(response.data);
+    } catch (error: unknown) {
+      if (isAxiosError(error) && error.response?.status === 404) {
+        return [];
+      }
+      const message = extractErrorMessage(error, "Failed to load documents.");
+      throw new Error(message);
+    }
+  },
+
   async getDocument(id: string): Promise<IDocument> {
     try {
       const response = await axiosInstance.get<IDocument>(`/api/documents/${id}`);

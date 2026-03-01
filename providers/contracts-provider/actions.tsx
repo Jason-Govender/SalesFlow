@@ -24,7 +24,7 @@ export const loadContractsPending = createAction<IContractsStateContext>(
 
 export const loadContractsSuccess = createAction<
   IContractsStateContext,
-  { contracts: IContract[]; clientId: string }
+  { contracts: IContract[]; clientId?: string | null }
 >(
   ContractsActionEnums.loadContractsSuccess,
   ({ contracts, clientId }) =>
@@ -33,7 +33,7 @@ export const loadContractsSuccess = createAction<
       isError: false,
       error: undefined,
       contracts,
-      currentClientId: clientId,
+      currentClientId: clientId ?? null,
     }) as IContractsStateContext
 );
 

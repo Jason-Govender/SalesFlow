@@ -77,6 +77,36 @@ export const OpportunitiesProvider = ({
     []
   );
 
+  const loadOpportunities = useCallback(
+    async (
+      params?: { stage?: number; searchTerm?: string; pageNumber?: number; pageSize?: number }
+    ): Promise<void> => {
+      dispatch(loadOpportunitiesPending());
+      try {
+        const result = await opportunitiesService.list({
+          stage: params?.stage,
+          searchTerm: params?.searchTerm,
+          pageNumber: params?.pageNumber ?? 1,
+          pageSize: params?.pageSize ?? 10,
+        });
+        dispatch(
+          loadOpportunitiesSuccess({
+            opportunities: result.items,
+            clientId: null,
+            pageNumber: result.pageNumber,
+            pageSize: result.pageSize,
+            totalCount: result.totalCount,
+          })
+        );
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Failed to load opportunities.";
+        dispatch(loadOpportunitiesError(message));
+      }
+    },
+    []
+  );
+
   const clearOpportunities = useCallback(() => {
     dispatch(clearOpportunitiesAction());
   }, []);
@@ -108,7 +138,7 @@ export const OpportunitiesProvider = ({
 
   const refetchListIfCurrentClient = useCallback(
     (clientId: string | null) => {
-      if (clientId && state.currentClientId === clientId) {
+      if (clientId != null && state.currentClientId === clientId) {
         opportunitiesService
           .list({
             clientId,
@@ -127,6 +157,24 @@ export const OpportunitiesProvider = ({
             )
           )
           .catch(() => {});
+      } else if (clientId === null && state.currentClientId === null) {
+        opportunitiesService
+          .list({
+            pageNumber: state.pageNumber,
+            pageSize: state.pageSize,
+          })
+          .then((result) =>
+            dispatch(
+              loadOpportunitiesSuccess({
+                opportunities: result.items,
+                clientId: null,
+                pageNumber: result.pageNumber,
+                pageSize: result.pageSize,
+                totalCount: result.totalCount,
+              })
+            )
+          )
+          .catch(() => {});
       }
     },
     [state.currentClientId, state.pageNumber, state.pageSize]
@@ -138,7 +186,7 @@ export const OpportunitiesProvider = ({
       try {
         const opportunity = await opportunitiesService.create(body);
         dispatch(actionSuccessAction());
-        refetchListIfCurrentClient(body.clientId);
+        refetchListIfCurrentClient(state.currentClientId);
         return opportunity;
       } catch (error: unknown) {
         const message =
@@ -244,6 +292,7 @@ export const OpportunitiesProvider = ({
   const actionValue = useMemo(
     () => ({
       loadOpportunitiesByClient,
+      loadOpportunities,
       clearOpportunities,
       loadOpportunity,
       clearSelectedOpportunity,
@@ -256,6 +305,7 @@ export const OpportunitiesProvider = ({
     }),
     [
       loadOpportunitiesByClient,
+      loadOpportunities,
       clearOpportunities,
       loadOpportunity,
       clearSelectedOpportunity,
