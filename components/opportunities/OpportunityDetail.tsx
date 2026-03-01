@@ -26,6 +26,7 @@ import {
   MoreOutlined,
 } from "@ant-design/icons";
 import { useAuthState } from "@/providers/auth-provider";
+import { useDashboardActions } from "@/providers/dashboard-provider";
 import { useOpportunitiesState, useOpportunitiesActions } from "@/providers/opportunities-provider";
 import { useContactsState, useContactsActions } from "@/providers/contacts-provider";
 import { usePricingRequestsState, usePricingRequestsActions } from "@/providers/pricing-requests-provider";
@@ -88,6 +89,7 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
     loadOpportunity,
     loadStageHistory,
   } = useOpportunitiesActions();
+  const { loadDashboard } = useDashboardActions();
 
   const { contacts } = useContactsState();
   const { loadContactsByClient } = useContactsActions();
@@ -137,6 +139,7 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
       loadOpportunity(selectedOpportunity.id);
       loadStageHistory(selectedOpportunity.id);
     }
+    loadDashboard();
   };
 
   const handleAssignSuccess = () => {

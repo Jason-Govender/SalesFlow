@@ -35,10 +35,12 @@ export const loadOpportunitiesSuccess = createAction<
     pageNumber: number;
     pageSize: number;
     totalCount: number;
+    stageFilter?: number;
+    searchTerm?: string;
   }
 >(
   OpportunitiesActionEnums.loadOpportunitiesSuccess,
-  ({ opportunities, clientId, pageNumber, pageSize, totalCount }) =>
+  ({ opportunities, clientId, pageNumber, pageSize, totalCount, stageFilter, searchTerm }) =>
     ({
       isPending: false,
       isError: false,
@@ -48,6 +50,8 @@ export const loadOpportunitiesSuccess = createAction<
       pageNumber,
       pageSize,
       totalCount,
+      stageFilter,
+      searchTerm,
     }) as Partial<IOpportunitiesStateContext>
 );
 
@@ -73,6 +77,8 @@ export const clearOpportunitiesAction = createAction<Partial<IOpportunitiesState
       pageNumber: 1,
       pageSize: 10,
       totalCount: 0,
+      stageFilter: undefined,
+      searchTerm: undefined,
       isError: false,
       error: undefined,
     }) as Partial<IOpportunitiesStateContext>

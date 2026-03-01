@@ -24,6 +24,7 @@ import {
   EyeOutlined,
 } from "@ant-design/icons";
 import { useAuthState } from "@/providers/auth-provider";
+import { useDashboardActions } from "@/providers/dashboard-provider";
 import { useOpportunitiesState, useOpportunitiesActions } from "@/providers/opportunities-provider";
 import { useContactsState, useContactsActions } from "@/providers/contacts-provider";
 import { useClientsState, useClientsActions } from "@/providers/clients-provider";
@@ -96,6 +97,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
     deleteOpportunity,
   } = useOpportunitiesActions();
 
+  const { loadDashboard } = useDashboardActions();
   const { contacts } = useContactsState();
   const { loadContactsByClient } = useContactsActions();
   const { clients } = useClientsState();
@@ -228,6 +230,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
     } else {
       loadOpportunities({ pageNumber, pageSize, stage: stageFilter });
     }
+    loadDashboard();
   };
 
   const handleDelete = (record: IOpportunity) => {

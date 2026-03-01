@@ -66,6 +66,8 @@ export const OpportunitiesProvider = ({
             pageNumber: result.pageNumber,
             pageSize: result.pageSize,
             totalCount: result.totalCount,
+            stageFilter: params?.stage,
+            searchTerm: params?.searchTerm,
           })
         );
       } catch (error: unknown) {
@@ -96,6 +98,8 @@ export const OpportunitiesProvider = ({
             pageNumber: result.pageNumber,
             pageSize: result.pageSize,
             totalCount: result.totalCount,
+            stageFilter: params?.stage,
+            searchTerm: params?.searchTerm,
           })
         );
       } catch (error: unknown) {
@@ -142,6 +146,8 @@ export const OpportunitiesProvider = ({
         opportunitiesService
           .list({
             clientId,
+            stage: state.stageFilter,
+            searchTerm: state.searchTerm,
             pageNumber: state.pageNumber,
             pageSize: state.pageSize,
           })
@@ -153,6 +159,8 @@ export const OpportunitiesProvider = ({
                 pageNumber: result.pageNumber,
                 pageSize: result.pageSize,
                 totalCount: result.totalCount,
+                stageFilter: state.stageFilter,
+                searchTerm: state.searchTerm,
               })
             )
           )
@@ -160,6 +168,8 @@ export const OpportunitiesProvider = ({
       } else if (clientId === null && state.currentClientId === null) {
         opportunitiesService
           .list({
+            stage: state.stageFilter,
+            searchTerm: state.searchTerm,
             pageNumber: state.pageNumber,
             pageSize: state.pageSize,
           })
@@ -171,13 +181,21 @@ export const OpportunitiesProvider = ({
                 pageNumber: result.pageNumber,
                 pageSize: result.pageSize,
                 totalCount: result.totalCount,
+                stageFilter: state.stageFilter,
+                searchTerm: state.searchTerm,
               })
             )
           )
           .catch(() => {});
       }
     },
-    [state.currentClientId, state.pageNumber, state.pageSize]
+    [
+      state.currentClientId,
+      state.pageNumber,
+      state.pageSize,
+      state.stageFilter,
+      state.searchTerm,
+    ]
   );
 
   const createOpportunity = useCallback(
