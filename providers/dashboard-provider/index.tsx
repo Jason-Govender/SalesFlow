@@ -37,8 +37,11 @@ export const DashboardProvider = ({
     dispatch(loadDashboardPending());
 
     try {
-      const overview = await dashboardService.getOverview();
-      dispatch(loadDashboardSuccess(overview));
+      const [overview, pipelineMetrics] = await Promise.all([
+        dashboardService.getOverview(),
+        dashboardService.getPipelineMetrics(),
+      ]);
+      dispatch(loadDashboardSuccess({ overview, pipelineMetrics }));
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Failed to load dashboard.";

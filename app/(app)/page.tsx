@@ -1,7 +1,8 @@
 "use client";
 
-import { Card, Row, Col, Statistic, Spin, Alert, Table } from "antd";
+import { Card, Row, Col, Statistic, Spin, Alert } from "antd";
 import { useDashboardState, useDashboardActions } from "@/providers/dashboard-provider";
+import { PipelineChart } from "@/components/dashboard/PipelineChart";
 import { useDashboardPageStyles } from "./pageStyles";
 
 function formatCurrency(value: number): string {
@@ -15,7 +16,8 @@ function formatCurrency(value: number): string {
 
 export default function Home() {
   const { styles } = useDashboardPageStyles();
-  const { overview, isPending, isError, error } = useDashboardState();
+  const { overview, pipelineMetrics, isPending, isError, error } =
+    useDashboardState();
   const { loadDashboard } = useDashboardActions();
 
   if (isPending) {
@@ -50,29 +52,7 @@ export default function Home() {
     return null;
   }
 
-  const { opportunities, pipeline, activities, contracts, revenue } = overview;
-
-  const pipelineColumns = [
-    {
-      title: "Stage",
-      dataIndex: "stageName",
-      key: "stageName",
-      render: (val: string) => val ?? "—",
-    },
-    {
-      title: "Count",
-      dataIndex: "count",
-      key: "count",
-      render: (val: number) => (val != null ? val : "—"),
-    },
-    {
-      title: "Value",
-      dataIndex: "value",
-      key: "value",
-      render: (val: number) =>
-        val != null ? formatCurrency(val) : "—",
-    },
-  ];
+  const { opportunities, activities, contracts, revenue } = overview;
 
   return (
     <div>
@@ -94,11 +74,6 @@ export default function Home() {
               title="Win rate (%)"
               value={opportunities.winRate}
               precision={2}
-              className={styles.statisticItem}
-            />
-            <Statistic
-              title="Pipeline value"
-              value={formatCurrency(opportunities.pipelineValue)}
               className={styles.statisticItem}
             />
           </Card>
@@ -157,24 +132,15 @@ export default function Home() {
       </Row>
 
       <Row gutter={[16, 16]} className={styles.pipelineRow}>
-        <Col xs={24} lg={12}>
+        <Col xs={24}>
           <Card
-            title={`Pipeline (weighted value: ${formatCurrency(pipeline.weightedPipelineValue)})`}
+            title="Pipeline chart"
             className={styles.pipelineCard}
           >
-            {pipeline.stages?.length > 0 ? (
-              <Table
-                dataSource={pipeline.stages.map((s, i) => ({
-                  ...s,
-                  key: s.stageId ?? i,
-                }))}
-                columns={pipelineColumns}
-                pagination={false}
-                size="small"
-              />
-            ) : (
-              <span>No pipeline stages</span>
-            )}
+            <PipelineChart
+              stages={pipelineMetrics?.stages ?? []}
+              weightedValue={pipelineMetrics?.weightedPipelineValue}
+            />
           </Card>
         </Col>
       </Row>

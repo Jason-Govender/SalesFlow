@@ -58,6 +58,23 @@ export interface IDashboardOverview {
   revenue: IDashboardOverviewRevenue;
 }
 
+/**
+ * Pipeline metrics response (GET /api/dashboard/pipeline-metrics).
+ * Stage breakdown with counts and values for charting.
+ */
+export interface IPipelineMetricsStage {
+  stageId?: number;
+  stageName?: string;
+  count?: number;
+  value?: number;
+  [key: string]: unknown;
+}
+
+export interface IPipelineMetrics {
+  stages: IPipelineMetricsStage[];
+  weightedPipelineValue?: number;
+}
+
 const extractErrorMessage = (error: unknown, fallback: string): string => {
   if (typeof error === "string") return error;
 
@@ -99,6 +116,21 @@ export const dashboardService = {
       const message = extractErrorMessage(
         error,
         "Failed to load dashboard overview."
+      );
+      throw new Error(message);
+    }
+  },
+
+  async getPipelineMetrics(): Promise<IPipelineMetrics> {
+    try {
+      const response = await axiosInstance.get<IPipelineMetrics>(
+        "/api/dashboard/pipeline-metrics"
+      );
+      return response.data;
+    } catch (error: unknown) {
+      const message = extractErrorMessage(
+        error,
+        "Failed to load pipeline metrics."
       );
       throw new Error(message);
     }

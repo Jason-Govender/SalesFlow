@@ -1,6 +1,14 @@
 import { createAction } from "redux-actions";
 import type { IDashboardStateContext } from "./context";
-import type { IDashboardOverview } from "../../utils/dashboard-service";
+import type {
+  IDashboardOverview,
+  IPipelineMetrics,
+} from "../../utils/dashboard-service";
+
+export interface IDashboardLoadSuccessPayload {
+  overview: IDashboardOverview;
+  pipelineMetrics: IPipelineMetrics;
+}
 
 export enum DashboardActionEnums {
   loadDashboardPending = "DASHBOARD_LOAD_PENDING",
@@ -20,12 +28,13 @@ export const loadDashboardPending = createAction<IDashboardStateContext>(
 
 export const loadDashboardSuccess = createAction<
   IDashboardStateContext,
-  IDashboardOverview
->(DashboardActionEnums.loadDashboardSuccess, (overview) => ({
+  IDashboardLoadSuccessPayload
+>(DashboardActionEnums.loadDashboardSuccess, (payload) => ({
   isPending: false,
   isError: false,
   error: undefined,
-  overview,
+  overview: payload.overview,
+  pipelineMetrics: payload.pipelineMetrics,
 }));
 
 export const loadDashboardError = createAction<IDashboardStateContext, string>(
@@ -35,5 +44,6 @@ export const loadDashboardError = createAction<IDashboardStateContext, string>(
     isError: true,
     error,
     overview: null,
+    pipelineMetrics: null,
   })
 );

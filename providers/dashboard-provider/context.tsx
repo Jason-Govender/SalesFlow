@@ -1,8 +1,12 @@
 import { createContext } from "react";
-import type { IDashboardOverview } from "../../utils/dashboard-service";
+import type {
+  IDashboardOverview,
+  IPipelineMetrics,
+} from "../../utils/dashboard-service";
 
 export interface IDashboardStateContext {
   overview: IDashboardOverview | null;
+  pipelineMetrics: IPipelineMetrics | null;
   isPending: boolean;
   isError: boolean;
   error?: string;
@@ -10,6 +14,7 @@ export interface IDashboardStateContext {
 
 export const INITIAL_DASHBOARD_STATE: IDashboardStateContext = {
   overview: null,
+  pipelineMetrics: null,
   isPending: false,
   isError: false,
   error: undefined,
