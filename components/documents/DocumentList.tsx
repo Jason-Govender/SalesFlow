@@ -130,7 +130,17 @@ export function DocumentList({ clientId, opportunityId }: DocumentListProps) {
       title: "File name",
       dataIndex: "fileName",
       key: "fileName",
-      render: (val: string) => val || "—",
+      render: (val: string, record: IDocument) => (
+        <a
+          onClick={(e) => {
+            e.stopPropagation();
+            if (downloadingId !== record.id) handleDownload(record);
+          }}
+          style={{ pointerEvents: downloadingId === record.id ? "none" : undefined }}
+        >
+          {val || "—"}
+        </a>
+      ),
     },
     {
       title: "Description",
@@ -160,7 +170,10 @@ export function DocumentList({ clientId, opportunityId }: DocumentListProps) {
             key: "download",
             icon: <DownloadOutlined />,
             label: "Download",
-            onClick: () => handleDownload(record),
+            onClick: (e) => {
+              e.domEvent?.stopPropagation?.();
+              handleDownload(record);
+            },
             disabled: downloadingId === record.id,
           },
           ...(canDeleteDocument
@@ -170,13 +183,20 @@ export function DocumentList({ clientId, opportunityId }: DocumentListProps) {
                   icon: <DeleteOutlined />,
                   label: "Delete",
                   danger: true,
-                  onClick: () => handleDelete(record),
+                  onClick: (e) => {
+                    e.domEvent?.stopPropagation?.();
+                    handleDelete(record);
+                  },
                 },
               ]
             : []),
         ];
         return (
-          <Dropdown menu={{ items }} trigger={["click"]}>
+          <Dropdown
+            menu={{ items }}
+            trigger={["click"]}
+            onClick={(e) => e.stopPropagation()}
+          >
             <Button
               type="text"
               size="small"
@@ -244,6 +264,12 @@ export function DocumentList({ clientId, opportunityId }: DocumentListProps) {
         rowKey="id"
         columns={columns}
         pagination={false}
+        onRow={(record) => ({
+          onClick: () => {
+            if (!downloadingId) handleDownload(record);
+          },
+          style: { cursor: downloadingId ? "wait" : "pointer" },
+        })}
       />
       <DocumentUploadModal
         open={uploadModalOpen}

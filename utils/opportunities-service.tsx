@@ -248,8 +248,39 @@ export const opportunitiesService = {
         `/api/opportunities/${id}/stage-history`
       );
       const data = response.data;
-      if (Array.isArray(data)) return data;
-      return [];
+      if (!Array.isArray(data)) return [];
+      const raw = data as Array<Record<string, unknown>>;
+      return raw.map((item) => {
+        let stage =
+          item.stage ??
+          item.Stage ??
+          item.stageId ??
+          item.StageId ??
+          item.stage_id ??
+          (item as Record<string, unknown>).Stage_id;
+        if (stage != null && typeof stage === "object" && !Array.isArray(stage)) {
+          const obj = stage as Record<string, unknown>;
+          stage = obj.id ?? obj.Id ?? obj.value ?? obj.Value ?? obj.stage ?? obj.Stage;
+        }
+        return {
+          id: item.id ?? item.Id,
+          opportunityId:
+            item.opportunityId ??
+            item.OpportunityId ??
+            item.opportunity_id ??
+            (item as Record<string, unknown>).Opportunity_id,
+          stage,
+          changedAt:
+            item.changedAt ??
+            item.ChangedAt ??
+            item.changed_at ??
+            (item as Record<string, unknown>).Changed_at,
+          reason:
+            item.reason ??
+            item.Reason ??
+            (item as Record<string, unknown>).reason,
+        };
+      }) as IStageHistoryEntry[];
     } catch (error: unknown) {
       const message = extractErrorMessage(
         error,

@@ -127,8 +127,8 @@ export default function ClientDetailPage() {
   const handleDelete = () => {
     if (!id) return;
     Modal.confirm({
-      title: "Soft-delete client",
-      content: "Are you sure you want to soft-delete this client?",
+      title: "Delete client",
+      content: "Are you sure you want to delete this client?",
       okText: "Delete",
       okType: "danger",
       cancelText: "Cancel",

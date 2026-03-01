@@ -11,7 +11,6 @@ import {
   Typography,
   Descriptions,
   Tag,
-  Table,
   Dropdown,
   Modal,
   Tabs,
@@ -74,7 +73,6 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
 
   const {
     selectedOpportunity,
-    stageHistory,
     isPending,
     isError,
     error,
@@ -87,7 +85,6 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
     assignOpportunity,
     deleteOpportunity,
     loadOpportunity,
-    loadStageHistory,
   } = useOpportunitiesActions();
   const { loadDashboard } = useDashboardActions();
 
@@ -115,7 +112,6 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
     setEditModalOpen(false);
     if (selectedOpportunity) {
       loadOpportunity(selectedOpportunity.id);
-      loadStageHistory(selectedOpportunity.id);
     }
   };
 
@@ -137,7 +133,6 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
     setStageModalOpen(false);
     if (selectedOpportunity) {
       loadOpportunity(selectedOpportunity.id);
-      loadStageHistory(selectedOpportunity.id);
     }
     loadDashboard();
   };
@@ -243,28 +238,6 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
       : []),
   ];
 
-  const stageHistoryColumns = [
-    {
-      title: "Stage",
-      dataIndex: "stage",
-      key: "stage",
-      render: (stage: number) =>
-        OPPORTUNITY_STAGE_LABELS[stage as OpportunityStage] ?? stage,
-    },
-    {
-      title: "Changed at",
-      dataIndex: "changedAt",
-      key: "changedAt",
-      render: (val: string) => (val ? new Date(val).toLocaleString() : "—"),
-    },
-    {
-      title: "Reason",
-      dataIndex: "reason",
-      key: "reason",
-      render: (val: string) => val || "—",
-    },
-  ];
-
   return (
     <Space direction="vertical" size="middle" style={{ width: "100%" }}>
       <Space wrap>
@@ -309,18 +282,6 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
           </Descriptions>
         </Space>
       </Card>
-
-      {stageHistory && stageHistory.length > 0 && (
-        <Card title="Stage history">
-          <Table
-            dataSource={stageHistory}
-            rowKey={(r) => r.changedAt ?? r.opportunityId + String(r.stage)}
-            columns={stageHistoryColumns}
-            pagination={false}
-            size="small"
-          />
-        </Card>
-      )}
 
       <Card>
         <Tabs
@@ -384,14 +345,14 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
               ),
             },
             {
-              key: "notes",
-              label: "Notes",
-              children: <NoteList opportunityId={opp.id} />,
-            },
-            {
               key: "documents",
               label: "Documents",
               children: <DocumentList opportunityId={opp.id} />,
+            },
+            {
+              key: "notes",
+              label: "Notes",
+              children: <NoteList opportunityId={opp.id} />,
             },
           ]}
         />

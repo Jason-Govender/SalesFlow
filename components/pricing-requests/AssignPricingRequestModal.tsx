@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { Modal, Form, Input, Button } from "antd";
+import { Modal, Form, Button } from "antd";
+import { SalesRepSelect } from "@/components/SalesRepSelect";
 
 export interface AssignPricingRequestModalProps {
   open: boolean;
@@ -30,7 +31,7 @@ export function AssignPricingRequestModal({
 
   const handleFinish = async (values: { userId: string }) => {
     if (!pricingRequestId) return;
-    const userId = values.userId.trim();
+    const userId = (values.userId ?? "").trim();
     if (!userId) return;
     try {
       await onAssign(pricingRequestId, userId);
@@ -52,10 +53,10 @@ export function AssignPricingRequestModal({
       <Form form={form} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           name="userId"
-          label="User ID"
-          rules={[{ required: true, message: "User ID is required" }]}
+          label="Assign to"
+          rules={[{ required: true, message: "Please select a user" }]}
         >
-          <Input placeholder="Paste the assignee's user ID (GUID)" />
+          <SalesRepSelect placeholder="Search by name or email..." />
         </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading}>

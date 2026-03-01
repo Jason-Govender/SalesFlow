@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Table,
@@ -12,6 +12,7 @@ import {
   Dropdown,
   Modal,
   Select,
+  Input,
 } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -118,6 +119,32 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignModalOpportunity, setAssignModalOpportunity] = useState<IOpportunity | null>(null);
   const [stageFilter, setStageFilter] = useState<number | undefined>(undefined);
+  const [clientNameFilter, setClientNameFilter] = useState("");
+  const [titleFilter, setTitleFilter] = useState("");
+
+  const searchTermRaw = useMemo(
+    () => titleFilter.trim() || undefined,
+    [titleFilter]
+  );
+
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string | undefined>(searchTermRaw);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearchTerm(searchTermRaw), 300);
+    return () => clearTimeout(t);
+  }, [searchTermRaw]);
+
+  const searchTerm = debouncedSearchTerm;
+
+  const filteredByClientName = useMemo(() => {
+    if (clientId != null || !clientNameFilter.trim() || !opportunities?.length) {
+      return opportunities ?? [];
+    }
+    const q = clientNameFilter.trim().toLowerCase();
+    return opportunities.filter((record) => {
+      const name = clientIdToName[record.clientId];
+      return name != null && name.toLowerCase().includes(q);
+    });
+  }, [clientId, clientNameFilter, opportunities, clients]);
 
   useEffect(() => {
     if (clientId != null) {
@@ -125,18 +152,20 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
         pageNumber: 1,
         pageSize: 10,
         stage: stageFilter,
+        searchTerm,
       });
     } else {
       loadOpportunities({
         pageNumber: 1,
         pageSize: 10,
         stage: stageFilter,
+        searchTerm,
       });
     }
     return () => {
       clearOpportunities();
     };
-  }, [clientId, stageFilter, loadOpportunitiesByClient, loadOpportunities, clearOpportunities]);
+  }, [clientId, stageFilter, searchTerm, loadOpportunitiesByClient, loadOpportunities, clearOpportunities]);
 
   useEffect(() => {
     if (clientId == null && !clients?.length) {
@@ -150,12 +179,14 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
         pageNumber: page,
         pageSize: newPageSize ?? pageSize,
         stage: stageFilter,
+        searchTerm,
       });
     } else {
       loadOpportunities({
         pageNumber: page,
         pageSize: newPageSize ?? pageSize,
         stage: stageFilter,
+        searchTerm,
       });
     }
   };
@@ -174,17 +205,18 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
     setFormModalOpen(false);
     setEditingOpportunity(null);
     if (clientId != null) {
-      loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+      loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm });
     } else {
-      loadOpportunities({ pageNumber, pageSize, stage: stageFilter });
+      loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm });
     }
   };
 
   const handleCreateSubmit = async (values: OpportunityFormValues) => {
-    if (clientId == null) return;
+    const effectiveClientId = clientId ?? values.clientId;
+    if (!effectiveClientId) return;
     await createOpportunity({
       ...values,
-      clientId,
+      clientId: effectiveClientId,
     });
   };
 
@@ -216,9 +248,9 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
     setAssignModalOpen(false);
     setAssignModalOpportunity(null);
     if (clientId != null) {
-      loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+      loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm });
     } else {
-      loadOpportunities({ pageNumber, pageSize, stage: stageFilter });
+      loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm });
     }
   };
 
@@ -226,9 +258,9 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
     setStageModalOpen(false);
     setStageModalOpportunity(null);
     if (clientId != null) {
-      loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+      loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm });
     } else {
-      loadOpportunities({ pageNumber, pageSize, stage: stageFilter });
+      loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm });
     }
     loadDashboard();
   };
@@ -243,9 +275,9 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
       onOk: async () => {
         await deleteOpportunity(record.id);
         if (clientId != null) {
-          loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter });
+          await loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm });
         } else {
-          loadOpportunities({ pageNumber, pageSize, stage: stageFilter });
+          await loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm });
         }
       },
     });
@@ -268,7 +300,19 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
             title: "Client",
             dataIndex: "clientId",
             key: "clientId",
-            render: (id: string) => (id ? clientIdToName[id] ?? id : "—"),
+            render: (id: string) =>
+              id ? (
+                <a
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/clients/${id}`);
+                  }}
+                >
+                  {clientIdToName[id] ?? id}
+                </a>
+              ) : (
+                "—"
+              ),
           },
         ]
       : []),
@@ -396,8 +440,8 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
               size="small"
               onClick={() =>
                 clientId != null
-                  ? loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter })
-                  : loadOpportunities({ pageNumber, pageSize, stage: stageFilter })
+                  ? loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm })
+                  : loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm })
               }
             >
               Retry
@@ -406,23 +450,39 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
         />
       )}
       <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <Select
-          value={stageFilter}
-          onChange={setStageFilter}
-          options={stageOptions}
-          style={{ minWidth: 140 }}
-          placeholder="Filter by stage"
-          allowClear
-        />
-        {clientId != null && (
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            Add opportunity
-          </Button>
-        )}
+        <Space wrap>
+          <Select
+            value={stageFilter}
+            onChange={setStageFilter}
+            options={stageOptions}
+            style={{ minWidth: 140 }}
+            placeholder="Filter by stage"
+            allowClear
+          />
+          {clientId == null && (
+            <Input
+              allowClear
+              placeholder="Filter by client name"
+              value={clientNameFilter}
+              onChange={(e) => setClientNameFilter(e.target.value)}
+              style={{ width: 200 }}
+            />
+          )}
+          <Input
+            allowClear
+            placeholder="Filter by opportunity name"
+            value={titleFilter}
+            onChange={(e) => setTitleFilter(e.target.value)}
+            style={{ width: 200 }}
+          />
+        </Space>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+          {clientId != null ? "Add opportunity" : "Create opportunity"}
+        </Button>
       </div>
       <Table
         loading={isPending}
-        dataSource={opportunities ?? []}
+        dataSource={filteredByClientName}
         rowKey="id"
         columns={columns}
         pagination={{
@@ -444,6 +504,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
         clientId={clientId ?? editingOpportunity?.clientId ?? ""}
         opportunity={editingOpportunity}
         contacts={contacts ?? []}
+        clients={clientId == null ? (clients ?? []).map((c) => ({ id: c.id, name: c.name })) : undefined}
         onSubmit={handleCreateSubmit}
         onUpdate={handleUpdateSubmit}
         loading={actionPending}

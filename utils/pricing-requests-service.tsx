@@ -268,4 +268,16 @@ export const pricingRequestsService = {
       throw new Error(message);
     }
   },
+
+  async delete(id: string): Promise<void> {
+    try {
+      await axiosInstance.delete(`/api/pricingrequests/${id}`);
+    } catch (error: unknown) {
+      const message = extractErrorMessage(
+        error,
+        "Failed to delete pricing request."
+      );
+      throw new Error(message);
+    }
+  },
 };

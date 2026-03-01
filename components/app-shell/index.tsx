@@ -10,6 +10,7 @@ import {
   TeamOutlined,
   CalendarOutlined,
   FileTextOutlined,
+  DollarOutlined,
   DownOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
@@ -55,9 +56,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       icon: <FileTextOutlined />,
       label: <Link href="/contracts">Contracts</Link>,
     },
+    {
+      key: "/pricing-requests",
+      icon: <DollarOutlined />,
+      label: <Link href="/pricing-requests">Pricing Requests</Link>,
+    },
   ];
 
-  const pathKeys = ["/", "/opportunities", "/clients", "/activities", "/contracts"];
+  const pathKeys = ["/", "/opportunities", "/clients", "/activities", "/contracts", "/pricing-requests"];
   const selectedKey =
     pathname === "/"
       ? "/"
@@ -65,9 +71,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         ? "/opportunities"
         : pathname?.startsWith("/contracts")
           ? "/contracts"
-          : pathKeys
-            .filter((k) => k !== "/" && k !== "/opportunities" && k !== "/contracts" && pathname.startsWith(k))
-            .sort((a, b) => b.length - a.length)[0] ?? pathname;
+          : pathname?.startsWith("/pricing-requests")
+            ? "/pricing-requests"
+            : pathKeys
+              .filter((k) => k !== "/" && k !== "/opportunities" && k !== "/contracts" && k !== "/pricing-requests" && pathname.startsWith(k))
+              .sort((a, b) => b.length - a.length)[0] ?? pathname;
 
 
   const userDropdownItems: MenuProps["items"] = [

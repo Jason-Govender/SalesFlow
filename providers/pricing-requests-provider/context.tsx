@@ -70,6 +70,7 @@ export interface IPricingRequestsActionContext {
   ) => Promise<void>;
   assignPricingRequest: (id: string, userId: string) => Promise<void>;
   completePricingRequest: (id: string) => Promise<void>;
+  deletePricingRequest: (id: string) => Promise<void>;
   clearSelectedPricingRequest: () => void;
 }
 

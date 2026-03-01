@@ -141,9 +141,9 @@ export const OpportunitiesProvider = ({
   }, []);
 
   const refetchListIfCurrentClient = useCallback(
-    (clientId: string | null) => {
+    (clientId: string | null): Promise<void> => {
       if (clientId != null && state.currentClientId === clientId) {
-        opportunitiesService
+        return opportunitiesService
           .list({
             clientId,
             stage: state.stageFilter,
@@ -165,8 +165,9 @@ export const OpportunitiesProvider = ({
             )
           )
           .catch(() => {});
-      } else if (clientId === null && state.currentClientId === null) {
-        opportunitiesService
+      }
+      if (clientId === null && state.currentClientId === null) {
+        return opportunitiesService
           .list({
             stage: state.stageFilter,
             searchTerm: state.searchTerm,
@@ -188,6 +189,7 @@ export const OpportunitiesProvider = ({
           )
           .catch(() => {});
       }
+      return Promise.resolve();
     },
     [
       state.currentClientId,
@@ -246,7 +248,6 @@ export const OpportunitiesProvider = ({
         if (state.selectedOpportunity?.id === id) {
           const updated = await opportunitiesService.getById(id);
           dispatch(loadOpportunitySuccess(updated));
-          loadStageHistory(id);
         }
         refetchListIfCurrentClient(state.currentClientId);
       } catch (error: unknown) {
@@ -260,7 +261,6 @@ export const OpportunitiesProvider = ({
       state.selectedOpportunity?.id,
       state.currentClientId,
       refetchListIfCurrentClient,
-      loadStageHistory,
     ]
   );
 
@@ -294,7 +294,7 @@ export const OpportunitiesProvider = ({
         if (state.selectedOpportunity?.id === id) {
           dispatch(clearSelectedOpportunityAction());
         }
-        refetchListIfCurrentClient(state.currentClientId);
+        await refetchListIfCurrentClient(state.currentClientId);
       } catch (error: unknown) {
         const message =
           error instanceof Error ? error.message : "Failed to delete opportunity.";
