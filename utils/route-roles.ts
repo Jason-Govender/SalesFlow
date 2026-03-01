@@ -1,6 +1,15 @@
 import type { UserRole } from "@/providers/auth-provider/context";
 
 /**
+ * Returns true when the user has only the SalesRep role (no Admin, SalesManager, or BDM).
+ * Use for nav, redirects, and list scoping so sales reps get a focused experience.
+ */
+export function isSalesRepOnly(roles: UserRole[] | undefined): boolean {
+  if (!roles?.length) return false;
+  return roles.length === 1 && roles[0] === "SalesRep";
+}
+
+/**
  * Paths (or prefixes) that require specific roles.
  * null = any authenticated user.
  * Order matters for prefix matching: more specific paths first if we add overlapping entries.

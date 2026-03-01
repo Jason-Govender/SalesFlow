@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Layout, Menu, Dropdown } from "antd";
+import { Layout, Menu, Dropdown, message } from "antd";
 import {
   HomeOutlined,
   FolderOutlined,
@@ -13,9 +14,12 @@ import {
   DollarOutlined,
   DownOutlined,
   LogoutOutlined,
+  UserAddOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { useAuthState, useAuthActions } from "@/providers/auth-provider";
+import { isSalesRepOnly } from "@/utils/route-roles";
+import { InviteUserModal } from "@/components/invite-user";
 import { useAppShellStyles } from "./styles";
 
 const { Sider, Content } = Layout;
@@ -34,36 +38,69 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { session } = useAuthState();
   const { logout } = useAuthActions();
-  const menuItems: MenuProps["items"] = [
-    { key: "/", icon: <HomeOutlined />, label: <Link href="/">Dashboard</Link> },
-    {
-      key: "/opportunities",
-      icon: <FolderOutlined />,
-      label: <Link href="/opportunities">Opportunities</Link>,
-    },
-    {
-      key: "/clients",
-      icon: <TeamOutlined />,
-      label: <Link href="/clients">Clients</Link>,
-    },
-    {
-      key: "/activities",
-      icon: <CalendarOutlined />,
-      label: <Link href="/activities">Activities</Link>,
-    },
-    {
-      key: "/contracts",
-      icon: <FileTextOutlined />,
-      label: <Link href="/contracts">Contracts</Link>,
-    },
-    {
-      key: "/pricing-requests",
-      icon: <DollarOutlined />,
-      label: <Link href="/pricing-requests">Pricing Requests</Link>,
-    },
-  ];
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const isAdmin = session?.user?.roles?.includes("Admin");
+  const showDashboardInNav = !isSalesRepOnly(session?.user?.roles);
+  const menuItems: MenuProps["items"] = showDashboardInNav
+    ? [
+        { key: "/", icon: <HomeOutlined />, label: <Link href="/">Dashboard</Link> },
+        {
+          key: "/opportunities",
+          icon: <FolderOutlined />,
+          label: <Link href="/opportunities">Opportunities</Link>,
+        },
+        {
+          key: "/clients",
+          icon: <TeamOutlined />,
+          label: <Link href="/clients">Clients</Link>,
+        },
+        {
+          key: "/activities",
+          icon: <CalendarOutlined />,
+          label: <Link href="/activities">Activities</Link>,
+        },
+        {
+          key: "/contracts",
+          icon: <FileTextOutlined />,
+          label: <Link href="/contracts">Contracts</Link>,
+        },
+        {
+          key: "/pricing-requests",
+          icon: <DollarOutlined />,
+          label: <Link href="/pricing-requests">Pricing Requests</Link>,
+        },
+      ]
+    : [
+        {
+          key: "/opportunities",
+          icon: <FolderOutlined />,
+          label: <Link href="/opportunities">Opportunities</Link>,
+        },
+        {
+          key: "/clients",
+          icon: <TeamOutlined />,
+          label: <Link href="/clients">Clients</Link>,
+        },
+        {
+          key: "/activities",
+          icon: <CalendarOutlined />,
+          label: <Link href="/activities">Activities</Link>,
+        },
+        {
+          key: "/contracts",
+          icon: <FileTextOutlined />,
+          label: <Link href="/contracts">Contracts</Link>,
+        },
+        {
+          key: "/pricing-requests",
+          icon: <DollarOutlined />,
+          label: <Link href="/pricing-requests">Pricing Requests</Link>,
+        },
+      ];
 
-  const pathKeys = ["/", "/opportunities", "/clients", "/activities", "/contracts", "/pricing-requests"];
+  const pathKeys = (menuItems ?? [])
+    .map((i) => (i && typeof i.key === "string" ? i.key : null))
+    .filter((k): k is string => k != null);
   const selectedKey =
     pathname === "/"
       ? "/"
@@ -79,6 +116,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 
   const userDropdownItems: MenuProps["items"] = [
+    ...(isAdmin
+      ? [
+          {
+            key: "invite",
+            icon: <UserAddOutlined />,
+            label: "Invite user",
+            onClick: () => setInviteModalOpen(true),
+          },
+        ]
+      : []),
     {
       key: "logout",
       icon: <LogoutOutlined />,
@@ -132,6 +179,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Dropdown>
         </div>
       </Sider>
+      {session?.user?.tenantId ? (
+        <InviteUserModal
+          open={inviteModalOpen}
+          onClose={() => setInviteModalOpen(false)}
+          onSuccess={() => message.success("Invite sent.")}
+          tenantId={session.user.tenantId}
+        />
+      ) : null}
       <Layout className={styles.mainLayout}>
         <Content className={styles.content}>{children}</Content>
       </Layout>

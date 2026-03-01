@@ -46,7 +46,7 @@ export interface IOpportunitiesActionContext {
     params?: { stage?: number; searchTerm?: string; pageNumber?: number; pageSize?: number }
   ) => Promise<void>;
   loadOpportunities: (
-    params?: { stage?: number; searchTerm?: string; pageNumber?: number; pageSize?: number }
+    params?: { stage?: number; searchTerm?: string; pageNumber?: number; pageSize?: number; ownerId?: string }
   ) => Promise<void>;
   clearOpportunities: () => void;
   loadOpportunity: (id: string) => Promise<void>;

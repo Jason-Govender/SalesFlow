@@ -115,12 +115,12 @@ export default function Home() {
   }, [salesByPeriodParams]);
 
   useEffect(() => {
-    fetchOpportunitiesReport();
-  }, [fetchOpportunitiesReport]);
+    if (canViewRestricted) fetchOpportunitiesReport();
+  }, [canViewRestricted, fetchOpportunitiesReport]);
 
   useEffect(() => {
-    fetchSalesByPeriod();
-  }, [fetchSalesByPeriod]);
+    if (canViewRestricted) fetchSalesByPeriod();
+  }, [canViewRestricted, fetchSalesByPeriod]);
 
   if (isPending) {
     return (
@@ -307,6 +307,7 @@ export default function Home() {
         </Row>
       )}
 
+      {canViewRestricted && (
       <Row gutter={[16, 16]} className={styles.pipelineRow}>
         <Col xs={24}>
           <Card title="Opportunities report" className={styles.pipelineCard}>
@@ -388,7 +389,9 @@ export default function Home() {
           </Card>
         </Col>
       </Row>
+      )}
 
+      {canViewRestricted && (
       <Row gutter={[16, 16]} className={styles.pipelineRow}>
         <Col xs={24}>
           <Card title="Sales by period" className={styles.pipelineCard}>
@@ -435,6 +438,7 @@ export default function Home() {
           </Card>
         </Col>
       </Row>
+      )}
     </div>
   );
 }

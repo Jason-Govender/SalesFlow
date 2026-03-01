@@ -4,6 +4,7 @@ import { MailOutlined, LockOutlined } from "@ant-design/icons";
 import { useLoginStyles } from "./styles";
 import Image from "next/image";
 import { useAuthActions, useAuthState } from "@/providers/auth-provider";
+import { isSalesRepOnly } from "@/utils/route-roles";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -17,7 +18,12 @@ export default function LoginPage() {
   const { session, isPending, isError, error } = useAuthState();
 
   useEffect(() => {
-    if (session) router.replace("/");
+    if (!session) return;
+    if (isSalesRepOnly(session.user.roles)) {
+      router.replace("/opportunities");
+    } else {
+      router.replace("/");
+    }
   }, [router, session]);
 
   const onFinish = async (values: { email: string; password: string }) => {

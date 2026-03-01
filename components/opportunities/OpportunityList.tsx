@@ -25,6 +25,7 @@ import {
   EyeOutlined,
 } from "@ant-design/icons";
 import { useAuthState } from "@/providers/auth-provider";
+import { isSalesRepOnly } from "@/utils/route-roles";
 import { useDashboardActions } from "@/providers/dashboard-provider";
 import { useOpportunitiesState, useOpportunitiesActions } from "@/providers/opportunities-provider";
 import { useContactsState, useContactsActions } from "@/providers/contacts-provider";
@@ -76,6 +77,8 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
   const canAssignOrDelete = userRoles.some((r) =>
     ROLES_CAN_ASSIGN_OR_DELETE_OPPORTUNITY.includes(r)
   );
+  const salesRepOwnerId =
+    isSalesRepOnly(userRoles) && session?.user?.userId ? session.user.userId : undefined;
 
   const {
     opportunities,
@@ -160,12 +163,13 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
         pageSize: 10,
         stage: stageFilter,
         searchTerm,
+        ownerId: salesRepOwnerId,
       });
     }
     return () => {
       clearOpportunities();
     };
-  }, [clientId, stageFilter, searchTerm, loadOpportunitiesByClient, loadOpportunities, clearOpportunities]);
+  }, [clientId, stageFilter, searchTerm, salesRepOwnerId, loadOpportunitiesByClient, loadOpportunities, clearOpportunities]);
 
   useEffect(() => {
     if (clientId == null && !clients?.length) {
@@ -187,6 +191,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
         pageSize: newPageSize ?? pageSize,
         stage: stageFilter,
         searchTerm,
+        ownerId: salesRepOwnerId,
       });
     }
   };
@@ -207,7 +212,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
     if (clientId != null) {
       loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm });
     } else {
-      loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm });
+      loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm, ownerId: salesRepOwnerId });
     }
   };
 
@@ -250,7 +255,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
     if (clientId != null) {
       loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm });
     } else {
-      loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm });
+      loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm, ownerId: salesRepOwnerId });
     }
   };
 
@@ -260,7 +265,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
     if (clientId != null) {
       loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm });
     } else {
-      loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm });
+      loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm, ownerId: salesRepOwnerId });
     }
     loadDashboard();
   };
@@ -277,7 +282,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
         if (clientId != null) {
           await loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm });
         } else {
-          await loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm });
+          await loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm, ownerId: salesRepOwnerId });
         }
       },
     });
@@ -441,7 +446,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
               onClick={() =>
                 clientId != null
                   ? loadOpportunitiesByClient(clientId, { pageNumber, pageSize, stage: stageFilter, searchTerm })
-                  : loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm })
+                  : loadOpportunities({ pageNumber, pageSize, stage: stageFilter, searchTerm, ownerId: salesRepOwnerId })
               }
             >
               Retry
