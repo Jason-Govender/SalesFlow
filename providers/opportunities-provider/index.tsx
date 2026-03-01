@@ -81,7 +81,13 @@ export const OpportunitiesProvider = ({
 
   const loadOpportunities = useCallback(
     async (
-      params?: { stage?: number; searchTerm?: string; pageNumber?: number; pageSize?: number }
+      params?: {
+        stage?: number;
+        searchTerm?: string;
+        pageNumber?: number;
+        pageSize?: number;
+        ownerId?: string;
+      }
     ): Promise<void> => {
       dispatch(loadOpportunitiesPending());
       try {
@@ -90,6 +96,7 @@ export const OpportunitiesProvider = ({
           searchTerm: params?.searchTerm,
           pageNumber: params?.pageNumber ?? 1,
           pageSize: params?.pageSize ?? 10,
+          ownerId: params?.ownerId,
         });
         dispatch(
           loadOpportunitiesSuccess({

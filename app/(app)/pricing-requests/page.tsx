@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, Tabs, Select, Space, Modal } from "antd";
 import { usePricingRequestsState, usePricingRequestsActions } from "@/providers/pricing-requests-provider";
 import { useAuthState } from "@/providers/auth-provider";
+import { isSalesRepOnly } from "@/utils/route-roles";
 import {
   PRICING_REQUEST_STATUS_LABELS,
   PRIORITY_LABELS,
@@ -53,12 +54,17 @@ export default function PricingRequestsPage() {
     deletePricingRequest,
   } = usePricingRequestsActions();
 
+  const isSalesRep = isSalesRepOnly(session?.user?.roles);
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalRequest, setEditModalRequest] = useState<IPricingRequest | null>(null);
   const [assignModalRequest, setAssignModalRequest] = useState<IPricingRequest | null>(null);
   const showPending = canSeePending(session?.user?.roles);
   const canAssign = (session?.user?.roles ?? []).some((r) => ROLES_CAN_ASSIGN.includes(r));
+
+  useEffect(() => {
+    if (isSalesRep) loadMyRequests();
+  }, [isSalesRep, loadMyRequests]);
 
   useEffect(() => {
     if (activeTab === "all") {
@@ -105,6 +111,12 @@ export default function PricingRequestsPage() {
       cancelText: "Cancel",
       onOk: async () => {
         await deletePricingRequest(record.id);
+        if (isSalesRep) loadMyRequests();
+        else {
+          if (activeTab === "all") loadPricingRequests({ ...filters, pageNumber: pagination.pageNumber, pageSize: pagination.pageSize });
+          if (activeTab === "pending") loadPending();
+          if (activeTab === "my") loadMyRequests();
+        }
       },
     });
   };
@@ -173,66 +185,85 @@ export default function PricingRequestsPage() {
     },
   ];
 
+  const myRequestsTabContent = (
+    <PricingRequestList
+      items={myRequests}
+      loading={isPending}
+      error={isError ? error : undefined}
+      onRetry={() => loadMyRequests()}
+      showCreateButton
+      onCreateClick={() => setCreateModalOpen(true)}
+      onEdit={(record) => setEditModalRequest(record)}
+      onDelete={handleDelete}
+    />
+  );
+
   return (
     <div>
       <h1 className={styles.title}>Pricing Requests</h1>
 
       <Card>
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-          {activeTab === "all" && (
-            <Space wrap>
-              <Select
-                placeholder="Status"
-                allowClear
-                value={filters.status}
-                onChange={(value) => {
-                  setFilters({ status: value });
-                  setPagination(1);
-                }}
-                options={[
-                  { value: undefined, label: "All statuses" },
-                  {
-                    value: PricingRequestStatus.Pending,
-                    label: PRICING_REQUEST_STATUS_LABELS[PricingRequestStatus.Pending],
-                  },
-                  {
-                    value: PricingRequestStatus.InProgress,
-                    label:
-                      PRICING_REQUEST_STATUS_LABELS[PricingRequestStatus.InProgress],
-                  },
-                  {
-                    value: PricingRequestStatus.Completed,
-                    label:
-                      PRICING_REQUEST_STATUS_LABELS[PricingRequestStatus.Completed],
-                  },
-                ]}
-                style={{ minWidth: 140 }}
-              />
-              <Select
-                placeholder="Priority"
-                allowClear
-                value={filters.priority}
-                onChange={(value) => {
-                  setFilters({ priority: value });
-                  setPagination(1);
-                }}
-                options={[
-                  { value: undefined, label: "All priorities" },
-                  { value: Priority.Low, label: PRIORITY_LABELS[Priority.Low] },
-                  { value: Priority.Medium, label: PRIORITY_LABELS[Priority.Medium] },
-                  { value: Priority.High, label: PRIORITY_LABELS[Priority.High] },
-                  { value: Priority.Urgent, label: PRIORITY_LABELS[Priority.Urgent] },
-                ]}
-                style={{ minWidth: 140 }}
-              />
-            </Space>
-          )}
+          {isSalesRep ? (
+            myRequestsTabContent
+          ) : (
+            <>
+              {activeTab === "all" && (
+                <Space wrap>
+                  <Select
+                    placeholder="Status"
+                    allowClear
+                    value={filters.status}
+                    onChange={(value) => {
+                      setFilters({ status: value });
+                      setPagination(1);
+                    }}
+                    options={[
+                      { value: undefined, label: "All statuses" },
+                      {
+                        value: PricingRequestStatus.Pending,
+                        label: PRICING_REQUEST_STATUS_LABELS[PricingRequestStatus.Pending],
+                      },
+                      {
+                        value: PricingRequestStatus.InProgress,
+                        label:
+                          PRICING_REQUEST_STATUS_LABELS[PricingRequestStatus.InProgress],
+                      },
+                      {
+                        value: PricingRequestStatus.Completed,
+                        label:
+                          PRICING_REQUEST_STATUS_LABELS[PricingRequestStatus.Completed],
+                      },
+                    ]}
+                    style={{ minWidth: 140 }}
+                  />
+                  <Select
+                    placeholder="Priority"
+                    allowClear
+                    value={filters.priority}
+                    onChange={(value) => {
+                      setFilters({ priority: value });
+                      setPagination(1);
+                    }}
+                    options={[
+                      { value: undefined, label: "All priorities" },
+                      { value: Priority.Low, label: PRIORITY_LABELS[Priority.Low] },
+                      { value: Priority.Medium, label: PRIORITY_LABELS[Priority.Medium] },
+                      { value: Priority.High, label: PRIORITY_LABELS[Priority.High] },
+                      { value: Priority.Urgent, label: PRIORITY_LABELS[Priority.Urgent] },
+                    ]}
+                    style={{ minWidth: 140 }}
+                  />
+                </Space>
+              )}
 
-          <Tabs
-            activeKey={activeTab}
-            onChange={(k) => setActiveTab(k as TabKey)}
-            items={tabItems}
-          />
+              <Tabs
+                activeKey={activeTab}
+                onChange={(k) => setActiveTab(k as TabKey)}
+                items={tabItems}
+              />
+            </>
+          )}
         </Space>
       </Card>
 
@@ -242,8 +273,11 @@ export default function PricingRequestsPage() {
           onClose={() => setCreateModalOpen(false)}
           onSuccess={() => {
             setCreateModalOpen(false);
-            if (activeTab === "all") loadPricingRequests();
-            if (activeTab === "my") loadMyRequests();
+            if (isSalesRep) loadMyRequests();
+            else {
+              if (activeTab === "all") loadPricingRequests();
+              if (activeTab === "my") loadMyRequests();
+            }
           }}
           onSubmit={createPricingRequest}
           loading={actionPending}
@@ -256,9 +290,12 @@ export default function PricingRequestsPage() {
           onClose={() => setEditModalRequest(null)}
           onSuccess={() => {
             setEditModalRequest(null);
-            if (activeTab === "all") loadPricingRequests({ ...filters, pageNumber: pagination.pageNumber, pageSize: pagination.pageSize });
-            if (activeTab === "pending") loadPending();
-            if (activeTab === "my") loadMyRequests();
+            if (isSalesRep) loadMyRequests();
+            else {
+              if (activeTab === "all") loadPricingRequests({ ...filters, pageNumber: pagination.pageNumber, pageSize: pagination.pageSize });
+              if (activeTab === "pending") loadPending();
+              if (activeTab === "my") loadMyRequests();
+            }
           }}
           onSubmit={createPricingRequest}
           request={editModalRequest}

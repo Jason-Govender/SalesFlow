@@ -15,7 +15,7 @@ import { ActivitiesProvider } from "@/providers/activities-provider";
 import { DocumentsProvider } from "@/providers/documents-provider";
 import { NotesProvider } from "@/providers/notes-provider";
 import { AppShell } from "@/components/app-shell";
-import { hasAccess } from "@/utils/route-roles";
+import { hasAccess, isSalesRepOnly } from "@/utils/route-roles";
 import { useAppLayoutStyles } from "./layoutStyles";
 
 const ORANGE_PRIMARY = "#e85d04";
@@ -35,6 +35,11 @@ export default function AppLayout({
 
     if (!session) {
       router.replace("/login");
+      return;
+    }
+
+    if ((pathname ?? "/") === "/" && isSalesRepOnly(session.user.roles)) {
+      router.replace("/opportunities");
       return;
     }
 
@@ -61,6 +66,14 @@ export default function AppLayout({
   }
 
   if (!hasAccess(session.user.roles, pathname ?? "/")) {
+    return (
+      <div className={styles.spinWrapper}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if ((pathname ?? "/") === "/" && isSalesRepOnly(session.user.roles)) {
     return (
       <div className={styles.spinWrapper}>
         <Spin size="large" />

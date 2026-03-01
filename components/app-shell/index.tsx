@@ -16,6 +16,7 @@ import {
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { useAuthState, useAuthActions } from "@/providers/auth-provider";
+import { isSalesRepOnly } from "@/utils/route-roles";
 import { useAppShellStyles } from "./styles";
 
 const { Sider, Content } = Layout;
@@ -34,36 +35,67 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { session } = useAuthState();
   const { logout } = useAuthActions();
-  const menuItems: MenuProps["items"] = [
-    { key: "/", icon: <HomeOutlined />, label: <Link href="/">Dashboard</Link> },
-    {
-      key: "/opportunities",
-      icon: <FolderOutlined />,
-      label: <Link href="/opportunities">Opportunities</Link>,
-    },
-    {
-      key: "/clients",
-      icon: <TeamOutlined />,
-      label: <Link href="/clients">Clients</Link>,
-    },
-    {
-      key: "/activities",
-      icon: <CalendarOutlined />,
-      label: <Link href="/activities">Activities</Link>,
-    },
-    {
-      key: "/contracts",
-      icon: <FileTextOutlined />,
-      label: <Link href="/contracts">Contracts</Link>,
-    },
-    {
-      key: "/pricing-requests",
-      icon: <DollarOutlined />,
-      label: <Link href="/pricing-requests">Pricing Requests</Link>,
-    },
-  ];
+  const showDashboardInNav = !isSalesRepOnly(session?.user?.roles);
+  const menuItems: MenuProps["items"] = showDashboardInNav
+    ? [
+        { key: "/", icon: <HomeOutlined />, label: <Link href="/">Dashboard</Link> },
+        {
+          key: "/opportunities",
+          icon: <FolderOutlined />,
+          label: <Link href="/opportunities">Opportunities</Link>,
+        },
+        {
+          key: "/clients",
+          icon: <TeamOutlined />,
+          label: <Link href="/clients">Clients</Link>,
+        },
+        {
+          key: "/activities",
+          icon: <CalendarOutlined />,
+          label: <Link href="/activities">Activities</Link>,
+        },
+        {
+          key: "/contracts",
+          icon: <FileTextOutlined />,
+          label: <Link href="/contracts">Contracts</Link>,
+        },
+        {
+          key: "/pricing-requests",
+          icon: <DollarOutlined />,
+          label: <Link href="/pricing-requests">Pricing Requests</Link>,
+        },
+      ]
+    : [
+        {
+          key: "/opportunities",
+          icon: <FolderOutlined />,
+          label: <Link href="/opportunities">Opportunities</Link>,
+        },
+        {
+          key: "/clients",
+          icon: <TeamOutlined />,
+          label: <Link href="/clients">Clients</Link>,
+        },
+        {
+          key: "/activities",
+          icon: <CalendarOutlined />,
+          label: <Link href="/activities">Activities</Link>,
+        },
+        {
+          key: "/contracts",
+          icon: <FileTextOutlined />,
+          label: <Link href="/contracts">Contracts</Link>,
+        },
+        {
+          key: "/pricing-requests",
+          icon: <DollarOutlined />,
+          label: <Link href="/pricing-requests">Pricing Requests</Link>,
+        },
+      ];
 
-  const pathKeys = ["/", "/opportunities", "/clients", "/activities", "/contracts", "/pricing-requests"];
+  const pathKeys = (menuItems ?? [])
+    .map((i) => (i && typeof i.key === "string" ? i.key : null))
+    .filter((k): k is string => k != null);
   const selectedKey =
     pathname === "/"
       ? "/"

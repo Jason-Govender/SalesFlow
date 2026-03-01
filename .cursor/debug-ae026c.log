@@ -4056,3 +4056,5 @@
 {"sessionId":"ae026c","location":"OpportunityList.tsx:formatCurrency","message":"formatCurrency called","data":{"currency":"USD","value":3560099,"hypothesisId":"H3"},"timestamp":1772392121811}
 {"sessionId":"ae026c","location":"OpportunityList.tsx:formatCurrency","message":"formatCurrency called","data":{"currency":"USD","value":33,"hypothesisId":"H3"},"timestamp":1772392121813}
 {"sessionId":"ae026c","location":"OpportunityList.tsx:formatCurrency","message":"formatCurrency called","data":{"currency":"USD","value":33,"hypothesisId":"H3"},"timestamp":1772392121815}
+{"sessionId":"ae026c","location":"OpportunityList.tsx:formatCurrency","message":"formatCurrency called","data":{"currency":"ZAR","value":0,"hypothesisId":"H3"},"timestamp":1772395498191}
+{"sessionId":"ae026c","location":"OpportunityList.tsx:formatCurrency","message":"formatCurrency called","data":{"currency":"ZAR","value":0,"hypothesisId":"H3"},"timestamp":1772395498222}
