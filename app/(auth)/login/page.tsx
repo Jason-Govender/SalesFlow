@@ -28,7 +28,7 @@ export default function LoginPage() {
     <Card className={styles.card} variant="outlined">
       <div className={styles.header}>
         <Image
-          src="/logo1.png"
+          src="/logo2.png"
           alt="SalesFlow Logo"
           width={300}
           height={100}

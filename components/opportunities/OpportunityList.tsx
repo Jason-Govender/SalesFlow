@@ -219,7 +219,7 @@ export function OpportunityList({ clientId }: OpportunityListProps) {
             ? "green"
             : stage === OpportunityStage.ClosedLost
               ? "red"
-              : "blue";
+              : "orange";
         return <Tag color={color}>{label}</Tag>;
       },
     },

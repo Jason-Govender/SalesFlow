@@ -195,7 +195,7 @@ export function ActivityList({
             ? "green"
             : s === ActivityStatus.Cancelled
               ? "default"
-              : "blue";
+              : "orange";
         return (
           <Tag color={color}>
             {ACTIVITY_STATUS_LABELS[s] ?? status}

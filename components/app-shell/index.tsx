@@ -87,7 +87,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sider width={SIDEBAR_WIDTH} className={styles.sider}>
         <div className={styles.logo}>
           <Image
-            src="/logo1.png"
+            src="/logo2.png"
             alt="SalesFlow"
             width={200}
             height={100}

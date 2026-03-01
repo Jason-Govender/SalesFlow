@@ -261,7 +261,7 @@ export function OpportunityDetail({ clientId, clientName }: OpportunityDetailPro
             <Typography.Title level={4} style={{ margin: 0 }}>
               {opp.title}
             </Typography.Title>
-            <Tag color="blue">{stageLabel}</Tag>
+            <Tag color="orange">{stageLabel}</Tag>
           </div>
           <Descriptions column={1} size="small">
             {opp.estimatedValue != null && (

@@ -67,7 +67,7 @@ export function PricingRequestList({
           status === PricingRequestStatus.Completed
             ? "green"
             : status === PricingRequestStatus.InProgress
-              ? "blue"
+              ? "orange"
               : "default";
         return <Tag color={color}>{label}</Tag>;
       },

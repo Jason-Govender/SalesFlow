@@ -113,7 +113,7 @@ export function PricingRequestDetail({
                 status === PricingRequestStatus.Completed
                   ? "green"
                   : status === PricingRequestStatus.InProgress
-                    ? "blue"
+                    ? "orange"
                     : "default"
               }
             >

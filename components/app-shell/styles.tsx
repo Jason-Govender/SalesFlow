@@ -43,6 +43,7 @@ export const useAppShellStyles = createStyles(({ token }) => ({
       margin: "4px 8px",
       width: "calc(100% - 16px)",
       borderRadius: token.borderRadius,
+      transition: "color 0.2s ease",
     },
     "& .ant-menu-submenu-title": {
       color: "rgba(255, 255, 255, 0.85)",
@@ -51,14 +52,21 @@ export const useAppShellStyles = createStyles(({ token }) => ({
       margin: "4px 8px",
       width: "calc(100% - 16px)",
       borderRadius: token.borderRadius,
+      transition: "color 0.2s ease",
     },
     "& .ant-menu-item:hover": {
-      color: "#fff",
+      color: ACCENT_ORANGE,
       background: "rgba(255, 255, 255, 0.08)",
     },
+    "& .ant-menu-item:hover a, & .ant-menu-item:hover .ant-menu-title-content": {
+      color: ACCENT_ORANGE,
+    },
     "& .ant-menu-submenu-title:hover": {
-      color: "#fff",
+      color: ACCENT_ORANGE,
       background: "rgba(255, 255, 255, 0.08)",
+    },
+    "& .ant-menu-submenu-title:hover .ant-menu-title-content": {
+      color: ACCENT_ORANGE,
     },
     "& .ant-menu-item-selected": {
       background: `${SIDEBAR_SELECTED} !important`,
@@ -72,6 +80,9 @@ export const useAppShellStyles = createStyles(({ token }) => ({
     },
     "& .ant-menu-item .anticon, & .ant-menu-submenu-title .anticon": {
       color: "inherit",
+    },
+    "& .ant-menu-item:hover .anticon, & .ant-menu-submenu-title:hover .anticon": {
+      color: ACCENT_ORANGE,
     },
   },
   userSection: {

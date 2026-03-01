@@ -12,6 +12,8 @@ import { OpportunitiesProvider } from "@/providers/opportunities-provider";
 import { ProposalsProvider } from "@/providers/proposals-provider";
 import { PricingRequestsProvider } from "@/providers/pricing-requests-provider";
 import { ActivitiesProvider } from "@/providers/activities-provider";
+import { DocumentsProvider } from "@/providers/documents-provider";
+import { NotesProvider } from "@/providers/notes-provider";
 import { AppShell } from "@/components/app-shell";
 import { hasAccess } from "@/utils/route-roles";
 import { useAppLayoutStyles } from "./layoutStyles";
@@ -71,6 +73,9 @@ export default function AppLayout({
       theme={{
         token: {
           colorPrimary: ORANGE_PRIMARY,
+          colorLink: ORANGE_PRIMARY,
+          colorLinkHover: ORANGE_PRIMARY,
+          colorLinkActive: ORANGE_PRIMARY,
         },
       }}
     >
@@ -82,7 +87,11 @@ export default function AppLayout({
                 <ProposalsProvider>
                   <PricingRequestsProvider>
                     <ActivitiesProvider>
-                      <AppShell>{children}</AppShell>
+                      <DocumentsProvider>
+                        <NotesProvider>
+                          <AppShell>{children}</AppShell>
+                        </NotesProvider>
+                      </DocumentsProvider>
                     </ActivitiesProvider>
                   </PricingRequestsProvider>
                 </ProposalsProvider>
